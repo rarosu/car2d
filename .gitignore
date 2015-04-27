@@ -1,0 +1,7 @@
+build/
+
+**.exe
+**.lib
+**.idb
+**.ilk
+**.pdb
