@@ -1,6 +1,7 @@
 Window: {
     Width: 800
     Height: 600
+    Windowed: true
 }
 
 Controls: {
