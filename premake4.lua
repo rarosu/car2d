@@ -33,5 +33,5 @@ solution "car2d"
         language "C++"
         files { "code/car2d_main/**.hpp", "code/car2d_main/**.cpp" }
         objdir "build/car2d_main/obj/"
-        links { "opengl32", "SDL2", "SDL2main", "glew32" }
+        links { "opengl32", "SDL2", "SDL2main", "gl3w" }
         

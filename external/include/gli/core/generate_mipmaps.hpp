@@ -26,20 +26,15 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_GENERATE_MIPMAPS_INCLUDED
-#define GLI_GENERATE_MIPMAPS_INCLUDED
+#pragma once
 
 #include "texture2d.hpp"
 
 namespace gli
 {
 	template <typename texture>
-	texture generateMipmaps(
-		texture const & Texture, 
-		typename texture::size_type const & BaseLevel);
+	texture generate_mipmaps(texture & Texture);
 
 }//namespace gli
 
 #include "generate_mipmaps.inl"
-
-#endif//GLI_GENERATE_MIPMAPS_INCLUDED

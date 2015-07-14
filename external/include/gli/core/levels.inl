@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
-/// OpenGL Mathematics (glm.g-truc.net)
+/// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2005 - 2014 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2014 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -19,15 +19,23 @@
 /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
+///
+/// @ref core
+/// @file gli/core/levels.inl
+/// @date 2014-12-12 / 2014-12-12
+/// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-namespace glm
+namespace gli
 {
-	GLM_FUNC_QUALIFIER dword uint10_10_10_2_cast
-	(
-		glm::vec4 const & v
-	)
+	template <template <typename, glm::precision> class dimType>
+	inline size_t levels(dimType<size_t, glm::defaultp> const & Dimensions)
 	{
-		return dword(uint(v.x * 2047.f) << 0 | uint(v.y * 2047.f) << 10 | uint(v.z * 2047.f) << 20 | uint(v.w * 3.f) << 30);
+		return glm::log2(glm::compMax(Dimensions)) + static_cast<size_t>(1);
 	}
-}//namespace glm
+
+	inline size_t levels(size_t Dimensions)
+	{
+		return glm::log2(Dimensions) + static_cast<size_t>(1);
+	}
+}//namespace gli

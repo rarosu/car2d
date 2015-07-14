@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -53,17 +53,32 @@ inline image copy(image const & Image)
 }
 */
 
+inline texture2D copy(texture2D const & Texture, texture2D::format_type Format)
+{
+	texture2D Copy(
+		Texture.levels(),
+		Format,
+		Texture.dimensions());
+
+	memcpy(
+		Copy.data<glm::byte>(),
+		Texture.data<glm::byte>(),
+		Copy.size<glm::byte>());
+		
+	return Copy;
+}
+
 template <>
 inline texture1D copy(texture1D const & Texture)
 {
 	texture1D Copy(
-		Texture.levels(), 
-		Texture.format(), 
+		Texture.levels(),
+		Texture.format(),
 		Texture.dimensions());
 
 	memcpy(
-		Copy.data<glm::byte>(), 
-		Texture.data<glm::byte>(), 
+		Copy.data<glm::byte>(),
+		Texture.data<glm::byte>(),
 		Copy.size<glm::byte>());
 		
 	return Copy;
@@ -83,7 +98,7 @@ inline texture1D copy
 	texture1D Copy(
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		texture1D::dimensions_type(Texture[BaseLevel].dimensions().x));
+		texture1D::dim_type(Texture[BaseLevel].dimensions().x));
 
 	memcpy(
 		Copy.data<glm::byte>(), 
@@ -133,7 +148,7 @@ inline texture1DArray copy
 		MaxMayer - BaseLayer + 1, 
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		texture1DArray::dimensions_type(Texture[BaseLayer][BaseLevel].dimensions().x));
+		texture1DArray::dim_type(Texture[BaseLayer][BaseLevel].dimensions().x));
 
 	for(texture1DArray::size_type Layer = 0; Layer < Copy.layers(); ++Layer)
 	{
@@ -176,7 +191,7 @@ inline texture2D copy
 	texture2D Copy(
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		texture2D::dimensions_type(Texture[BaseLevel].dimensions().x));
+		texture2D::dim_type(Texture[BaseLevel].dimensions().x));
 
 	memcpy(
 		Copy.data<glm::byte>(), 
@@ -226,7 +241,7 @@ inline texture2DArray copy
 		MaxMayer - BaseLayer + 1, 
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		texture2DArray::dimensions_type(Texture[BaseLayer][BaseLevel].dimensions()));
+		texture2DArray::dim_type(Texture[BaseLayer][BaseLevel].dimensions()));
 
 	for(texture2DArray::size_type Layer = 0; Layer < Copy.layers(); ++Layer)
 	{
@@ -269,7 +284,7 @@ inline texture3D copy
 	texture3D Copy(
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		texture3D::dimensions_type(Texture[BaseLevel].dimensions()));
+		texture3D::dim_type(Texture[BaseLevel].dimensions()));
 
 	memcpy(
 		Copy.data<glm::byte>(), 
@@ -319,7 +334,7 @@ inline textureCube copy
 		MaxFace - BaseFace + 1, 
 		MaxLevel - BaseLevel + 1, 
 		Texture.format(), 
-		textureCube::dimensions_type(Texture[BaseFace][BaseLevel].dimensions()));
+		textureCube::dim_type(Texture[BaseFace][BaseLevel].dimensions()));
 
 	for(textureCube::size_type Face = 0; Face < Copy.faces(); ++Face)
 	{
@@ -376,11 +391,11 @@ inline textureCubeArray copy
 	assert(MaxLayer < Texture.layers());
 
 	textureCubeArray Copy(
-		MaxLayer - BaseLayer + 1, 
-		MaxFace - BaseFace + 1, 
-		MaxLevel - BaseLevel + 1, 
-		Texture.format(), 
-		textureCube::dimensions_type(Texture[BaseLayer][BaseFace][BaseLevel].dimensions()));
+		MaxLayer - BaseLayer + 1,
+		MaxFace - BaseFace + 1,
+		MaxLevel - BaseLevel + 1,
+		Texture.format(),
+		textureCube::dim_type(Texture[BaseLayer][BaseFace][BaseLevel].dimensions()));
 
 	for(textureCubeArray::size_type Layer = 0; Layer < Copy.layers(); ++Layer)
 	for(textureCubeArray::size_type Face = 0; Face < Copy[Layer].faces(); ++Face)

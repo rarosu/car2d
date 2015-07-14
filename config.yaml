@@ -1,0 +1,19 @@
+Window: {
+    Width: 800
+    Height: 600
+}
+
+Controls: {
+    Accelerate:
+        - W
+        - Up
+    Reverse:
+        - S
+        - Down
+    Left:
+        - A
+        - Left
+    Right:
+        - D
+        - Right
+}

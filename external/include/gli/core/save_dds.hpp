@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,20 +26,20 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_SAVE_DDS_INCLUDED
-#define GLI_SAVE_DDS_INCLUDED
+#pragma once
 
 #include "load_dds.hpp"
 
 namespace gli
 {
-	/// Saving a texture storage to file
-	void save_dds(
-		storage const & Storage, 
-		char const * Filename);
+	/// Save a texture storage to file
+	void save_dds(storage const & Storage, char const * Filename);
 
+	/// Save a texture storage to file
+	void save_dds(storage const & Storage, std::string const & Filename);
+
+	// Save a texture storage to memory
+	void save_dds(storage const & Storage, char const * Data, std::size_t Size);
 }//namespace gli
 
 #include "save_dds.inl"
-
-#endif//GLI_SAVE_DDS_INCLUDED

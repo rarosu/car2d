@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_TEXTURE1D_INCLUDED 
-#define GLI_CORE_TEXTURE1D_INCLUDED
+#pragma once
 
 #include "image.hpp"
 
@@ -35,13 +34,11 @@ namespace gli
 {
 	class texture1DArray;
 
-	class texture1D
+	class texture1D : public texture
 	{
 	public:
-		typedef storage::dimensions1_type dimensions_type;
+		typedef storage::dim1_type dim_type;
 		typedef storage::texcoord1_type texcoord_type;
-		typedef storage::size_type size_type;
-		typedef storage::format_type format_type;
 
 	public:
 		texture1D();
@@ -50,12 +47,12 @@ namespace gli
 		explicit texture1D(
 			size_type const & Levels,
 			format_type const & Format,
-			dimensions_type const & Dimensions);
+			dim_type const & Dimensions);
 
 		/// Create a texture1D and allocate a new storage with a complete mipmap chain
 		explicit texture1D(
 			format_type const & Format,
-			dimensions_type const & Dimensions);
+			dim_type const & Dimensions);
 
 		/// Create a texture1D view with an existing storage
 		explicit texture1D(
@@ -88,45 +85,6 @@ namespace gli
 		operator storage() const;
 		image operator[] (size_type const & Level) const;
 
-		bool empty() const;
-		format_type format() const;
-		dimensions_type dimensions() const;
-		size_type layers() const;
-		size_type faces() const;
-		size_type levels() const;
-
-		size_type size() const;
-		void * data();
-		void const * data() const;
-
-		template <typename genType>
-		size_type size() const;
-		template <typename genType>
-		genType * data();
-		template <typename genType>
-		genType const * data() const;
-
-		void clear();
-		template <typename genType>
-		void clear(genType const & Texel);
-
-		size_type baseLayer() const;
-		size_type maxLayer() const;
-		size_type baseFace() const;
-		size_type maxFace() const;
-		size_type baseLevel() const;
-		size_type maxLevel() const;
-
-	private:
-		storage Storage;
-		size_type BaseLayer; 
-		size_type MaxLayer; 
-		size_type BaseFace;
-		size_type MaxFace;
-		size_type BaseLevel;
-		size_type MaxLevel;
-		format_type Format;
+		dim_type dimensions() const;
 	};
 }//namespace gli
-
-#endif//GLI_CORE_TEXTURE1D_INCLUDED

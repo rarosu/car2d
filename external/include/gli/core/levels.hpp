@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
-/// OpenGL Mathematics (glm.g-truc.net)
+/// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2005 - 2014 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2014 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -21,20 +21,45 @@
 /// THE SOFTWARE.
 ///
 /// @ref core
-/// @file glm/core/hint.hpp
-/// @date 2008-08-14 / 2011-06-15
+/// @file gli/core/levels.hpp
+/// @date 2014-12-12 / 2014-12-12
 /// @author Christophe Riccio
+///
+/// @defgroup core_image Image 
+/// @ingroup core
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef glm_core_type
-#define glm_core_type
+#pragma once
 
-namespace glm
+#include "type.hpp"
+
+namespace gli
 {
-	// Use dont_care, nicest and fastest to optimize implementations.
-	class dont_care {};
-	class nicest {};
-	class fastest {};
-}//namespace glm
+	/// Compute the number of mipmaps levels necessary to create a mipmap complete texture
+	/// 
+	/// @param Dimensions Dimensions of the texture base level mipmap
+	/// @tparam dimType Vector type used to express the dimentions of a texture of any kind.
+	/// @code
+	/// #include <gli/gli.hpp>
+	/// #include <gli/levels.hpp>
+	/// ...
+	/// gli::size2_t Dimensions(32, 10);
+	/// gli::texture2D Texture(gli::levels(Dimensions));
+	/// @endcode
+	template <template <typename, glm::precision> class dimType>
+	size_t levels(dimType<size_t, glm::defaultp> const & Dimensions);
 
-#endif//glm_core_type
+	/// Compute the number of mipmaps levels necessary to create a mipmap complete texture
+	/// 
+	/// @param Dimensions Dimensions of the texture base level mipmap
+	/// @tparam dimType Vector type used to express the dimentions of a texture of any kind.
+	/// @code
+	/// #include <gli/gli.hpp>
+	/// #include <gli/levels.hpp>
+	/// ...
+	/// gli::texture2D Texture(32);
+	/// @endcode
+	size_t levels(size_t Dimension);
+}//namespace gli
+
+#include "levels.inl"

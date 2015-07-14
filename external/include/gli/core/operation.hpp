@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_OPERATION_INCLUDED
-#define GLI_OPERATION_INCLUDED
+#pragma once
 
 #include "texture2d.hpp"
 
@@ -98,5 +97,3 @@ namespace gli
 }//namespace gli
 
 #include "operation.inl"
-
-#endif//GLI_OPERATION_INCLUDED

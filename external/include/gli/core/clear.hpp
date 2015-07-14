@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_CLEAR_INCLUDED
-#define GLI_CORE_CLEAR_INCLUDED
+#pragma once
 
 #include "texture1d.hpp"
 #include "texture1d_array.hpp"
@@ -39,11 +38,11 @@
 
 namespace gli
 {
-	template <typename genType, typename texture>
-	void clear(texture const & Texture, genType const & Texel);
+	template <typename genType>
+	inline void clear(image & Image, genType const & Texel);
 
+	template <typename genType>
+	void clear(texture2D & Texture, genType const & Texel);
 }//namespace gli
 
 #include "clear.inl"
-
-#endif//GLI_CORE_CLEAR_INCLUDED

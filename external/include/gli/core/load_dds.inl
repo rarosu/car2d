@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -22,22 +22,16 @@
 ///
 /// @ref core
 /// @file gli/core/load_dds.inl
-/// @date 2010-09-26 / 2013-01-28
+/// @date 2010-09-26 / 2015-06-16
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#include <fstream>
+#include <cstdio>
 #include <cassert>
 
 namespace gli{
 namespace detail
 {
-	// DDS Documentation
-	/*
-		http://msdn.microsoft.com/en-us/library/bb943991(VS.85).aspx#File_Layout1
-		http://msdn.microsoft.com/en-us/library/bb943992.aspx
-	*/
-
 	enum ddsCubemapflag
 	{
 		DDSCAPS2_CUBEMAP				= 0x00000200,
@@ -50,10 +44,10 @@ namespace detail
 		DDSCAPS2_VOLUME					= 0x00200000
 	};
 
-	glm::uint32 const DDSCAPS2_CUBEMAP_ALLFACES = (
-		DDSCAPS2_CUBEMAP_POSITIVEX | DDSCAPS2_CUBEMAP_NEGATIVEX |
-		DDSCAPS2_CUBEMAP_POSITIVEY | DDSCAPS2_CUBEMAP_NEGATIVEY |
-		DDSCAPS2_CUBEMAP_POSITIVEZ | DDSCAPS2_CUBEMAP_NEGATIVEZ);
+	enum
+	{
+		DDSCAPS2_CUBEMAP_ALLFACES = DDSCAPS2_CUBEMAP_POSITIVEX | DDSCAPS2_CUBEMAP_NEGATIVEX | DDSCAPS2_CUBEMAP_POSITIVEY | DDSCAPS2_CUBEMAP_NEGATIVEY | DDSCAPS2_CUBEMAP_POSITIVEZ | DDSCAPS2_CUBEMAP_NEGATIVEZ
+	};
 
 	enum ddsFlag
 	{
@@ -77,17 +71,15 @@ namespace detail
 	struct ddsPixelFormat
 	{
 		glm::uint32 size; // 32
-		glm::uint32 flags;
-		glm::uint32 fourCC;
+		dx::DDPF flags;
+		dx::D3DFORMAT fourCC;
 		glm::uint32 bpp;
-		glm::uint32 redMask;
-		glm::uint32 greenMask;
-		glm::uint32 blueMask;
-		glm::uint32 alphaMask;
+		glm::u32vec4 Mask;
 	};
 
 	struct ddsHeader
 	{
+		char Magic[4];
 		glm::uint32 size;
 		glm::uint32 flags;
 		glm::uint32 height;
@@ -111,275 +103,166 @@ namespace detail
 		D3D10_RESOURCE_DIMENSION_TEXTURE3D   = 4 
 	};
 
-	enum D3D10_RESOURCE_MISC_FLAG 
+	enum D3D10_RESOURCE_MISC_FLAG
 	{
-		D3D10_RESOURCE_MISC_GENERATE_MIPS       = 0x1L,
-		D3D10_RESOURCE_MISC_SHARED              = 0x2L,
-		D3D10_RESOURCE_MISC_TEXTURECUBE         = 0x4L,
-		D3D10_RESOURCE_MISC_SHARED_KEYEDMUTEX   = 0x10L,
-		D3D10_RESOURCE_MISC_GDI_COMPATIBLE      = 0x20L 
+		D3D10_RESOURCE_MISC_GENERATE_MIPS		= 0x01,
+		D3D10_RESOURCE_MISC_SHARED				= 0x02,
+		D3D10_RESOURCE_MISC_TEXTURECUBE			= 0x04,
+		D3D10_RESOURCE_MISC_SHARED_KEYEDMUTEX	= 0x10,
+		D3D10_RESOURCE_MISC_GDI_COMPATIBLE		= 0x20,
+	};
+
+	enum
+	{
+		DDS_ALPHA_MODE_UNKNOWN					= 0x0,
+		DDS_ALPHA_MODE_STRAIGHT					= 0x1,
+		DDS_ALPHA_MODE_PREMULTIPLIED			= 0x2,
+		DDS_ALPHA_MODE_OPAQUE					= 0x3,
+		DDS_ALPHA_MODE_CUSTOM					= 0x4
 	};
 
 	struct ddsHeader10
 	{
 		ddsHeader10() :
-			Format(DXGI_FORMAT_UNKNOWN),
+			Format(dx::DXGI_FORMAT_UNKNOWN),
 			resourceDimension(D3D10_RESOURCE_DIMENSION_UNKNOWN),
 			miscFlag(0),
 			arraySize(1),
 			reserved(0)
 		{}
 
-		dxgiFormat					Format;
+		dx::dxgiFormat				Format;
 		D3D10_RESOURCE_DIMENSION	resourceDimension;
 		glm::uint32					miscFlag; // D3D10_RESOURCE_MISC_GENERATE_MIPS
 		glm::uint32					arraySize;
 		glm::uint32					reserved;
 	};
-
-	inline gli::format format_fourcc2gli_cast(glm::uint32 const & Flags, glm::uint32 const & FourCC)
-	{
-		switch(FourCC)
-		{
-		case D3DFMT_DXT1:
-			return Flags & DDPF_ALPHAPIXELS ? RGBA_DXT1 : RGB_DXT1;
-		case D3DFMT_DXT2:
-		case D3DFMT_DXT3:
-			return RGBA_DXT3;
-		case D3DFMT_DXT4:
-		case D3DFMT_DXT5:
-			return RGBA_DXT5;
-		case D3DFMT_ATI1:
-		case D3DFMT_AT1N:
-			return R_ATI1N_UNORM;
-		case D3DFMT_ATI2:
-		case D3DFMT_AT2N:
-			return RG_ATI2N_UNORM;
-		case D3DFMT_R16F:
-			return R16F;
-		case D3DFMT_G16R16F:
-			return RG16F;
-		case D3DFMT_A16B16G16R16F:
-			return RGBA16F;
-		case D3DFMT_R32F:
-			return R32F;
-		case D3DFMT_G32R32F:
-			return RG32F;
-		case D3DFMT_A32B32G32R32F:
-			return RGBA32F;
-		case D3DFMT_R8G8B8:
-			return RGB8U;
-		case D3DFMT_A8R8G8B8:
-		case D3DFMT_X8R8G8B8:
-		case D3DFMT_A8B8G8R8:
-		case D3DFMT_X8B8G8R8:
-			return RGBA8U;
-		case D3DFMT_R5G6B5:
-			return R5G6B5;
-		case D3DFMT_A4R4G4B4:
-		case D3DFMT_X4R4G4B4:
-			return RGBA4;
-		case D3DFMT_G16R16:
-			return RG16U;
-		case D3DFMT_A16B16G16R16:
-			return RGBA16U;
-		case D3DFMT_A2R10G10B10:
-		case D3DFMT_A2B10G10R10:
-			return RGB10A2;
-		default:
-			assert(0);
-			return FORMAT_NULL;
-		}
-	}
-
-	inline gli::format format_dds2gli_cast(dxgiFormat const & Format)
-	{
-		static gli::format const Cast[] = 
-		{
-			gli::FORMAT_NULL,	//DXGI_FORMAT_UNKNOWN                      = 0,
-			gli::RGBA32U,		//DXGI_FORMAT_R32G32B32A32_TYPELESS        = 1,
-			gli::RGBA32F,		//DXGI_FORMAT_R32G32B32A32_FLOAT           = 2,
-			gli::RGBA32U,		//DXGI_FORMAT_R32G32B32A32_UINT            = 3,
-			gli::RGBA32I,		//DXGI_FORMAT_R32G32B32A32_SINT            = 4,
-			gli::RGB32U,			//DXGI_FORMAT_R32G32B32_TYPELESS           = 5,
-			gli::RGB32F,			//DXGI_FORMAT_R32G32B32_FLOAT              = 6,
-			gli::RGB32U,			//DXGI_FORMAT_R32G32B32_UINT               = 7,
-			gli::RGB32I,			//DXGI_FORMAT_R32G32B32_SINT               = 8,
-			gli::RGBA16U,		//DXGI_FORMAT_R16G16B16A16_TYPELESS        = 9,
-			gli::RGBA16F,		//DXGI_FORMAT_R16G16B16A16_FLOAT           = 10,
-			gli::RGBA16U,		//DXGI_FORMAT_R16G16B16A16_UNORM           = 11,
-			gli::RGBA16I,		//DXGI_FORMAT_R16G16B16A16_UINT            = 12,
-			gli::RGBA16I,		//DXGI_FORMAT_R16G16B16A16_SNORM           = 13,
-			gli::RGBA16I,		//DXGI_FORMAT_R16G16B16A16_SINT            = 14,
-			gli::RG32U,			//DXGI_FORMAT_R32G32_TYPELESS              = 15,
-			gli::RG32F,			//DXGI_FORMAT_R32G32_FLOAT                 = 16,
-			gli::RG32U,			//DXGI_FORMAT_R32G32_UINT                  = 17,
-			gli::RG32I,			//DXGI_FORMAT_R32G32_SINT                  = 18,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_R32G8X24_TYPELESS            = 19,
-			gli::D32FS8X24,		//DXGI_FORMAT_D32_FLOAT_S8X24_UINT         = 20,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS     = 21,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_X32_TYPELESS_G8X24_UINT      = 22,
-			gli::RGB10A2,		//DXGI_FORMAT_R10G10B10A2_TYPELESS         = 23,
-			gli::RGB10A2,		//DXGI_FORMAT_R10G10B10A2_UNORM            = 24,
-			gli::RGB10A2,		//DXGI_FORMAT_R10G10B10A2_UINT             = 25,
-			gli::RG11B10F,		//DXGI_FORMAT_R11G11B10_FLOAT              = 26,
-			gli::RGBA8U,			//DXGI_FORMAT_R8G8B8A8_TYPELESS            = 27,
-			gli::RGBA8U,			//DXGI_FORMAT_R8G8B8A8_UNORM               = 28,
-			gli::RGBA8U,			//DXGI_FORMAT_R8G8B8A8_UNORM_SRGB          = 29,
-			gli::RGBA8U,			//DXGI_FORMAT_R8G8B8A8_UINT                = 30,
-			gli::RGBA8I,			//DXGI_FORMAT_R8G8B8A8_SNORM               = 31,
-			gli::RGBA8I,			//DXGI_FORMAT_R8G8B8A8_SINT                = 32,
-			gli::RG16U,			//DXGI_FORMAT_R16G16_TYPELESS              = 33,
-			gli::RG16F,			//DXGI_FORMAT_R16G16_FLOAT                 = 34,
-			gli::RG16U,			//DXGI_FORMAT_R16G16_UNORM                 = 35,
-			gli::RG16U,			//DXGI_FORMAT_R16G16_UINT                  = 36,
-			gli::RG16I,			//DXGI_FORMAT_R16G16_SNORM                 = 37,
-			gli::RG16I,			//DXGI_FORMAT_R16G16_SINT                  = 38,
-			gli::R32F,			//DXGI_FORMAT_R32_TYPELESS                 = 39,
-			gli::D32F,			//DXGI_FORMAT_D32_FLOAT                    = 40,
-			gli::R32F,			//DXGI_FORMAT_R32_FLOAT                    = 41,
-			gli::R32U,			//DXGI_FORMAT_R32_UINT                     = 42,
-			gli::R32I,			//DXGI_FORMAT_R32_SINT                     = 43,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_R24G8_TYPELESS               = 44,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_D24_UNORM_S8_UINT            = 45,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_R24_UNORM_X8_TYPELESS        = 46,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_X24_TYPELESS_G8_UINT         = 47,
-			gli::RG8U,			//DXGI_FORMAT_R8G8_TYPELESS                = 48,
-			gli::RG8U,			//DXGI_FORMAT_R8G8_UNORM                   = 49,
-			gli::RG8U,			//DXGI_FORMAT_R8G8_UINT                    = 50,
-			gli::RG8I,			//DXGI_FORMAT_R8G8_SNORM                   = 51,
-			gli::RG8I,			//DXGI_FORMAT_R8G8_SINT                    = 52,
-			gli::R16U,			//DXGI_FORMAT_R16_TYPELESS                 = 53,
-			gli::R16F,			//DXGI_FORMAT_R16_FLOAT                    = 54,
-			gli::D16,			//DXGI_FORMAT_D16_UNORM                    = 55,
-			gli::R16U,			//DXGI_FORMAT_R16_UNORM                    = 56,
-			gli::R16U,			//DXGI_FORMAT_R16_UINT                     = 57,
-			gli::R16I,			//DXGI_FORMAT_R16_SNORM                    = 58,
-			gli::R16I,			//DXGI_FORMAT_R16_SINT                     = 59,
-			gli::R8U,			//DXGI_FORMAT_R8_TYPELESS                  = 60,
-			gli::R8U,			//DXGI_FORMAT_R8_UNORM                     = 61,
-			gli::R8U,			//DXGI_FORMAT_R8_UINT                      = 62,
-			gli::R8I,			//DXGI_FORMAT_R8_SNORM                     = 63,
-			gli::R8I,			//DXGI_FORMAT_R8_SINT                      = 64,
-			gli::R8U,			//DXGI_FORMAT_A8_UNORM                     = 65,
-			gli::FORMAT_NULL,	//DXGI_FORMAT_R1_UNORM                     = 66,
-			gli::RGB9E5,			//DXGI_FORMAT_R9G9B9E5_SHAREDEXP           = 67,
-			gli::FORMAT_NULL,		//DXGI_FORMAT_R8G8_B8G8_UNORM              = 68,
-			gli::FORMAT_NULL,		//DXGI_FORMAT_G8R8_G8B8_UNORM              = 69,
-			gli::RGBA_DXT1,			//DXGI_FORMAT_BC1_TYPELESS                 = 70,
-			gli::RGBA_DXT1,			//DXGI_FORMAT_BC1_UNORM                    = 71,
-			gli::RGBA_DXT1,			//DXGI_FORMAT_BC1_UNORM_SRGB               = 72,
-			gli::RGBA_DXT3,			//DXGI_FORMAT_BC2_TYPELESS                 = 73,
-			gli::RGBA_DXT3,			//DXGI_FORMAT_BC2_UNORM                    = 74,
-			gli::RGBA_DXT3,			//DXGI_FORMAT_BC2_UNORM_SRGB               = 75,
-			gli::RGBA_DXT5,			//DXGI_FORMAT_BC3_TYPELESS                 = 76,
-			gli::RGBA_DXT5,			//DXGI_FORMAT_BC3_UNORM                    = 77,
-			gli::RGBA_DXT5,			//DXGI_FORMAT_BC3_UNORM_SRGB               = 78,
-			gli::R_ATI1N_UNORM,		//DXGI_FORMAT_BC4_TYPELESS                 = 79,
-			gli::R_ATI1N_UNORM,		//DXGI_FORMAT_BC4_UNORM                    = 80,
-			gli::R_ATI1N_SNORM,		//DXGI_FORMAT_BC4_SNORM                    = 81,
-			gli::RG_ATI2N_UNORM,	//DXGI_FORMAT_BC5_TYPELESS                 = 82,
-			gli::RG_ATI2N_UNORM,	//DXGI_FORMAT_BC5_UNORM                    = 83,
-			gli::RG_ATI2N_SNORM,	//DXGI_FORMAT_BC5_SNORM                    = 84,
-			gli::FORMAT_NULL,		//DXGI_FORMAT_B5G6R5_UNORM                 = 85,
-			gli::FORMAT_NULL,		//DXGI_FORMAT_B5G5R5A1_UNORM               = 86,
-			gli::RGBA8_UNORM,			//DXGI_FORMAT_B8G8R8A8_UNORM               = 87,
-			gli::RGB8_UNORM,				//DXGI_FORMAT_B8G8R8X8_UNORM               = 88,
-			gli::FORMAT_NULL,		//DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM   = 89,
-			gli::RGBA8_UNORM,			//DXGI_FORMAT_B8G8R8A8_TYPELESS            = 90,
-			gli::RGBA8_UNORM,			//DXGI_FORMAT_B8G8R8A8_UNORM_SRGB          = 91,
-			gli::RGB8_UNORM,				//DXGI_FORMAT_B8G8R8X8_TYPELESS            = 92,
-			gli::SRGB8,						//DXGI_FORMAT_B8G8R8X8_UNORM_SRGB          = 93,
-			gli::RGB_BP_UNSIGNED_FLOAT,		//DXGI_FORMAT_BC6H_TYPELESS                = 94,
-			gli::RGB_BP_UNSIGNED_FLOAT,		//DXGI_FORMAT_BC6H_UF16                    = 95,
-			gli::RGB_BP_SIGNED_FLOAT,		//DXGI_FORMAT_BC6H_SF16                    = 96,
-			gli::RGB_BP_UNORM,				//DXGI_FORMAT_BC7_TYPELESS                 = 97,
-			gli::RGB_BP_UNORM,				//DXGI_FORMAT_BC7_UNORM                    = 98,
-			gli::RGB_BP_UNORM,				//DXGI_FORMAT_BC7_UNORM_SRGB               = 99,
-			gli::R32U						//DXGI_FORMAT_FORCE_UINT                   = 0xffffffffUL 
-		};
-
-		return Cast[Format];
-	}
 }//namespace detail
 
-inline storage load_dds
-(
-	char const * Filename
-)
+inline storage load_dds(char const * Data, std::size_t Size)
 {
-	std::ifstream FileIn(Filename, std::ios::in | std::ios::binary);
-	assert(!FileIn.fail());
+	assert(Data && (Size >= (sizeof(char[4]) + sizeof(detail::ddsHeader))));
 
-	if(FileIn.fail())
-		return storage();
+	detail::ddsHeader const & HeaderDesc(*reinterpret_cast<detail::ddsHeader const *>(Data));
+	std::size_t Offset = sizeof(detail::ddsHeader);
 
-	detail::ddsHeader HeaderDesc;
+	assert(strncmp(HeaderDesc.Magic, "DDS ", 4) == 0);
+
 	detail::ddsHeader10 HeaderDesc10;
-	char Magic[4]; 
+	if(HeaderDesc.format.flags & dx::DDPF_FOURCC && HeaderDesc.format.fourCC == dx::D3DFMT_DX10)
+	{
+		std::memcpy(&HeaderDesc10, Data + Offset, sizeof(HeaderDesc10));
+		Offset += sizeof(detail::ddsHeader10);
+	}
 
-	//* Read magic number and check if valid .dds file 
-	FileIn.read((char*)&Magic, sizeof(Magic));
+	dx DX;
 
-	assert(strncmp(Magic, "DDS ", 4) == 0);
-
-	// Get the surface descriptor 
-	FileIn.read((char*)&HeaderDesc, sizeof(HeaderDesc));
-	if(HeaderDesc.format.flags & detail::DDPF_FOURCC && HeaderDesc.format.fourCC == detail::D3DFMT_DX10)
-		FileIn.read((char*)&HeaderDesc10, sizeof(HeaderDesc10));
-
-	gli::format Format(gli::FORMAT_NULL);
-	if(HeaderDesc.format.fourCC == detail::D3DFMT_DX10)
-		Format = detail::format_dds2gli_cast(HeaderDesc10.Format);
-	else if(HeaderDesc.format.flags & detail::DDPF_FOURCC)
-		Format = detail::format_fourcc2gli_cast(HeaderDesc.format.flags, HeaderDesc.format.fourCC);
-	else if(HeaderDesc.format.flags & detail::DDPF_RGB)
+	gli::format Format(static_cast<gli::format>(gli::FORMAT_INVALID));
+	if((HeaderDesc.format.flags & (dx::DDPF_RGB | dx::DDPF_ALPHAPIXELS | dx::DDPF_ALPHA | dx::DDPF_YUV | dx::DDPF_LUMINANCE)) && Format == static_cast<format>(gli::FORMAT_INVALID) && HeaderDesc.format.flags != dx::DDPF_FOURCC_ALPHAPIXELS)
 	{
 		switch(HeaderDesc.format.bpp)
 		{
-		case 8:
-			Format = R8_UNORM;
-			break;
-		case 16:
-			Format = RG8_UNORM;
-			break;
-		case 24:
-			Format = RGB8_UNORM;
-			break;
-		case 32:
-			Format = RGBA8_UNORM;
+			case 8:
+			{
+				if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_L8_UNORM).Mask)))
+					Format = FORMAT_L8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_A8_UNORM).Mask)))
+					Format = FORMAT_A8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_R8_UNORM).Mask)))
+					Format = FORMAT_R8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_RG3B2_UNORM).Mask)))
+					Format = FORMAT_RG3B2_UNORM;
+				break;
+			}
+			case 16:
+			{
+				if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_LA8_UNORM).Mask)))
+					Format = FORMAT_LA8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_RG8_UNORM).Mask)))
+					Format = FORMAT_RG8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_R5G6B5_UNORM).Mask)))
+					Format = FORMAT_R5G6B5_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_L16_UNORM).Mask)))
+					Format = FORMAT_L16_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_A16_UNORM).Mask)))
+					Format = FORMAT_A16_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_R16_UNORM).Mask)))
+					Format = FORMAT_R16_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_RGB5A1_UNORM).Mask)))
+					Format = FORMAT_RGB5A1_UNORM;
+				break;
+			}
+			case 24:
+			{
+				dx::format const & DXFormat = DX.translate(FORMAT_RGB8_UNORM);
+				if(glm::all(glm::equal(HeaderDesc.format.Mask, DXFormat.Mask)))
+					Format = FORMAT_RGB8_UNORM;
+				break;
+			}
+			case 32:
+			{
+				if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_BGRX8_UNORM).Mask)))
+					Format = FORMAT_BGRX8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_BGRA8_UNORM).Mask)))
+					Format = FORMAT_BGRA8_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_RGB10A2_UNORM).Mask)))
+					Format = FORMAT_RGB10A2_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_LA16_UNORM).Mask)))
+					Format = FORMAT_LA16_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_RG16_UNORM).Mask)))
+					Format = FORMAT_RG16_UNORM;
+				else if(glm::all(glm::equal(HeaderDesc.format.Mask, DX.translate(FORMAT_R32_SFLOAT).Mask)))
+					Format = FORMAT_R32_SFLOAT;
+			}
 			break;
 		}
 	}
-	else
-		assert(0);
+	else if((HeaderDesc.format.flags & dx::DDPF_FOURCC) && (HeaderDesc.format.fourCC != dx::D3DFMT_DX10) && (Format == static_cast<format>(gli::FORMAT_INVALID)))
+		Format = DX.find(HeaderDesc.format.fourCC);
+	else if((HeaderDesc.format.fourCC == dx::D3DFMT_DX10) && (HeaderDesc10.Format != dx::DXGI_FORMAT_UNKNOWN))
+		Format = DX.find(HeaderDesc10.Format);
 
-	std::streamoff Curr = FileIn.tellg();
-	FileIn.seekg(0, std::ios_base::end);
-	std::streamoff End = FileIn.tellg();
-	FileIn.seekg(Curr, std::ios_base::beg);
+	assert(Format != static_cast<format>(gli::FORMAT_INVALID));
 
-	storage::size_type const MipMapCount = (HeaderDesc.flags & detail::DDSD_MIPMAPCOUNT) ? 
-		HeaderDesc.mipMapLevels : 1;
-
+	storage::size_type const MipMapCount = (HeaderDesc.flags & detail::DDSD_MIPMAPCOUNT) ? HeaderDesc.mipMapLevels : 1;
 	storage::size_type FaceCount(1);
 	if(HeaderDesc.cubemapFlags & detail::DDSCAPS2_CUBEMAP)
 		FaceCount = int(glm::bitCount(HeaderDesc.cubemapFlags & detail::DDSCAPS2_CUBEMAP_ALLFACES));
 
 	storage::size_type DepthCount = 1;
 	if(HeaderDesc.cubemapFlags & detail::DDSCAPS2_VOLUME)
-			DepthCount = HeaderDesc.depth;
+		DepthCount = HeaderDesc.depth;
 
 	storage Storage(
-		HeaderDesc10.arraySize, 
-		FaceCount,
-		MipMapCount,
-		Format,
-		storage::dimensions_type(HeaderDesc.width, HeaderDesc.height, DepthCount));
+		HeaderDesc10.arraySize, FaceCount, MipMapCount, Format,
+		storage::dim_type(HeaderDesc.width, HeaderDesc.height, DepthCount));
 
-	FileIn.read((char*)Storage.data(), std::size_t(End - Curr));
+	std::memcpy(Storage.data(), Data + Offset, Storage.size());
 
 	return Storage;
+}
+
+inline storage load_dds(char const * Filename)
+{
+	FILE* File = std::fopen(Filename, "rb");
+	assert(File);
+
+	long Beg = std::ftell(File);
+	std::fseek(File, 0, SEEK_END);
+	long End = std::ftell(File);
+	std::fseek(File, 0, SEEK_SET);
+
+	std::vector<char> Data(static_cast<std::size_t>(End - Beg));
+
+	std::fread(&Data[0], 1, Data.size(), File);
+	std::fclose(File);
+
+	return load_dds(&Data[0], Data.size());
+}
+
+inline storage load_dds(std::string const & Filename)
+{
+	return load_dds(Filename.c_str());
 }
 
 }//namespace gli

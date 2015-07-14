@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -37,14 +37,14 @@ namespace detail
 			return true;
 
 		// Compare the actual data
-        for(typename texture::size_type Level = 0; Level < TextureA.levels(); ++Level)
-        for(typename texture::size_type i = 0; i < TextureA[Level].template size<glm::byte>(); ++i)
-        {
-            glm::byte A = *(TextureA[Level].template data<glm::byte>() + i);
-            glm::byte B = *(TextureB[Level].template data<glm::byte>() + i);
-            if(A != B)
-                return false;
-        }
+		for(typename texture::size_type Level = 0; Level < TextureA.levels(); ++Level)
+		for(typename texture::size_type i = 0; i < TextureA[Level].template size<glm::byte>(); ++i)
+		{
+			glm::byte A = *(TextureA[Level].template data<glm::byte>() + i);
+			glm::byte B = *(TextureB[Level].template data<glm::byte>() + i);
+			if(A != B)
+				return false;
+		}
 
 		return true;
 	}

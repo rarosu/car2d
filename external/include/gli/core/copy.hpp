@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_COPY_INCLUDED
-#define GLI_CORE_COPY_INCLUDED
+#pragma once
 
 #include "image.hpp"
 #include "texture1d.hpp"
@@ -44,6 +43,8 @@ namespace gli
 
 	template <typename texture>
 	texture copy(texture const & Texture);
+
+	texture2D copy(texture2D const & Texture, texture2D::format_type Format);
 
 	texture1D copy(
 		texture1D const & Texture,
@@ -87,5 +88,3 @@ namespace gli
 }//namespace gli
 
 #include "copy.inl"
-
-#endif//GLI_CORE_COPY_INCLUDED

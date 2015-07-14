@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -29,16 +29,19 @@
 namespace gli
 {
 	template <typename genType>
-	inline image clear
-	(
-		image const & Image, 
-		genType const & Texel
-	)
+	inline void clear(image & Image, genType const & Texel)
 	{
 		image Result = Image;
 		for(std::size_t i = 0; i < Image.size() / sizeof(genType); ++i)
 			*static_cast<genType*>(Image.data)[i] = Texel;
-		return Result;
 	}
 
+	template <typename genType>
+	void clear(texture2D & Texture, genType const & Texel)
+	{
+		genType* Data = Texture.data<genType>();
+		typename texture2D::size_type const TexelCount = Texture.size<glm::u8vec4>();
+		for(std::size_t TexelIndex = 0; TexelIndex < TexelCount; ++TexelIndex)
+			*(Data + TexelIndex) = Texel;
+	}
 }//namespace gli

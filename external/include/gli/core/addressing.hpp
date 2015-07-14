@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,43 +26,42 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_ADDRESSING_INCLUDED
-#define GLI_CORE_ADDRESSING_INCLUDED
+#pragma once
 
 #include "storage.hpp"
 
 namespace gli{
 namespace detail
 {
-	size_type imageAddressing(
+	storage::size_type imageAddressing(
 		storage const & Storage,
-		size_type const & LayerOffset, 
-		size_type const & FaceOffset, 
-		size_type const & LevelOffset);
+		storage::size_type const & LayerOffset, 
+		storage::size_type const & FaceOffset, 
+		storage::size_type const & LevelOffset);
 
-	size_type texelLinearAdressing(
-		dimensions1_type const & Dimensions,
-		dimensions1_type const & TexelCoord);
+	storage::size_type texelLinearAdressing(
+		storage::dim1_type const & Dimensions,
+		storage::dim1_type const & TexelCoord);
 
-	size_type texelLinearAdressing(
-		dimensions2_type const & Dimensions,
-		dimensions2_type const & TexelCoord);
+	storage::size_type texelLinearAdressing(
+		storage::dim2_type const & Dimensions,
+		storage::dim2_type const & TexelCoord);
 
-	size_type texelLinearAdressing(
-		dimensions3_type const & Dimensions,
-		dimensions3_type const & TexelCoord);
+	storage::size_type texelLinearAdressing(
+		storage::dim3_type const & Dimensions,
+		storage::dim3_type const & TexelCoord);
 
-	size_type texelMortonAdressing(
-		dimensions1_type const & Dimensions,
-		dimensions1_type const & TexelCoord);
+	storage::size_type texelMortonAdressing(
+		storage::dim1_type const & Dimensions,
+		storage::dim1_type const & TexelCoord);
 
-	size_type texelMortonAdressing(
-		dimensions2_type const & Dimensions,
-		dimensions2_type const & TexelCoord);
+	storage::size_type texelMortonAdressing(
+		storage::dim2_type const & Dimensions,
+		storage::dim2_type const & TexelCoord);
 
-	size_type texelMortonAdressing(
-		dimensions3_type const & Dimensions,
-		dimensions3_type const & TexelCoord);
+	storage::size_type texelMortonAdressing(
+		storage::dim3_type const & Dimensions,
+		storage::dim3_type const & TexelCoord);
 
 }//namespace detail
 /*
@@ -139,5 +138,3 @@ namespace detail
 }//namespace gli
 
 #include "addressing.inl"
-
-#endif//GLI_CORE_ADDRESSING_INCLUDED

@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_HEADER_INCLUDED
-#define GLI_CORE_HEADER_INCLUDED
+#pragma once
 
 #include <cstddef>
 
@@ -37,5 +36,3 @@ namespace gli
 }//namespace gli
 
 #include "header.inl"
-
-#endif//GLI_CORE_HEADER_INCLUDED

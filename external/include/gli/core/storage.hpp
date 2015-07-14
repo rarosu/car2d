@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -26,8 +26,7 @@
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_STORAGE_INCLUDED
-#define GLI_CORE_STORAGE_INCLUDED
+#pragma once
 
 // STD
 #include <vector>
@@ -36,91 +35,77 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <memory>
+
+#include "header.hpp"
+#include "type.hpp"
 
 // GLM
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
+#include <glm/gtc/round.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/gradient_paint.hpp>
 #include <glm/gtx/integer.hpp>
 #include <glm/gtx/bit.hpp>
-#include <glm/gtx/multiple.hpp>
-#include <glm/gtx/number_precision.hpp>
 #include <glm/gtx/raw_data.hpp>
-#include <glm/gtx/scalar_relational.hpp>
+#include <glm/gtx/wrap.hpp>
 
-#include "shared_ptr.hpp"
-#include "header.hpp"
-#include "format.hpp"
+static_assert(GLM_VERSION >= 97, "GLI requires at least GLM 0.9.7");
 
-namespace gli{
-namespace detail
+namespace gli
 {
-	typedef std::size_t size_type;
-	typedef glm::uint dimensions1_type;
-	typedef glm::uvec2 dimensions2_type;
-	typedef glm::uvec3 dimensions3_type;
-	typedef glm::uvec4 dimensions4_type;
-}//namespace detail
-
 	class storage
 	{
 	public:
-		typedef glm::uint dimensions1_type;
-		typedef glm::uvec2 dimensions2_type;
-		typedef glm::uvec3 dimensions3_type;
-		typedef glm::uvec4 dimensions4_type;
-		typedef dimensions3_type dimensions_type;
-		typedef float texcoord1_type;
-		typedef glm::vec2 texcoord2_type;
-		typedef glm::vec3 texcoord3_type;
-		typedef glm::vec4 texcoord4_type;
-		typedef std::size_t size_type;
+		typedef dim1_t dim1_type;
+		typedef dim2_t dim2_type;
+		typedef dim3_t dim3_type;
+		typedef dim4_t dim4_type;
+		typedef dim3_type dim_type;
+		typedef texcoord1_t texcoord1_type;
+		typedef texcoord2_t texcoord2_type;
+		typedef texcoord3_t texcoord3_type;
+		typedef texcoord4_t texcoord4_type;
+		typedef size_t size_type;
+		typedef size_t layer_type;
+		typedef size_t level_type;
+		typedef size_t face_type;
 		typedef gli::format format_type;
+		typedef glm::byte data_type;
+		typedef glm::ivec4 swizzle_type;
 
 	public:
 		storage();
 
 		storage(
-			size_type const & Layers,
-			size_type const & Faces,
-			size_type const & Levels,
+			layer_type const & Layers,
+			face_type const & Faces,
+			level_type const & Levels,
 			format_type const & Format,
-			dimensions_type const & Dimensions);
-
-		storage(
-			size_type const & Layers,
-			size_type const & Faces,
-			size_type const & Levels,
-			dimensions_type const & Dimensions,
-			format_type const & Format,
-			size_type const & BlockSize,
-			dimensions_type const & BlockDimensions);
+			dim_type const & Dimensions);
 
 		bool empty() const;
 		size_type size() const; // Express is bytes
 		format_type format() const;
-		size_type layers() const;
-		size_type faces() const;
-		size_type levels() const;
+		layer_type layers() const;
+		level_type levels() const;
+		face_type faces() const;
+		swizzle_type swizzle() const;
 
-		size_type blockSize() const; // Express is bytes
-		dimensions_type blockDimensions() const; // Express is bytes
-		dimensions_type dimensions(size_type const & Level) const;
+		dim_type dimensions(size_type const & Level) const;
 
-		glm::byte * data();
-		glm::byte const * data() const;
+		data_type * data();
+		data_type const * data() const;
 
-		size_type levelSize(
-			size_type const & Level) const;
-		size_type faceSize(
-			size_type const & BaseLevel,
-			size_type const & MaxLevel) const;
-		size_type layerSize(
-			size_type const & BaseFace,
-			size_type const & MaxFace,
-			size_type const & BaseLevel,
-			size_type const & MaxLevel) const;
+		size_type level_size(
+			level_type const & Level) const;
+		size_type face_size(
+			level_type const & BaseLevel,
+			level_type const & MaxLevel) const;
+		size_type layer_size(
+			face_type const & BaseFace,
+			face_type const & MaxFace,
+			level_type const & BaseLevel,
+			level_type const & MaxLevel) const;
 
 	private:
 		struct impl
@@ -128,25 +113,21 @@ namespace detail
 			impl();
 
 			explicit impl(
-				size_type const & Layers, 
-				size_type const & Faces,
-				size_type const & Levels,
+				layer_type const & Layers, 
+				face_type const & Faces,
+				level_type const & Levels,
 				format_type const & Format,
-				dimensions_type const & Dimensions,
-				size_type const & BlockSize,
-				dimensions_type const & BlockDimensions);
+				dim_type const & Dimensions);
 
 			size_type const Layers; 
 			size_type const Faces;
 			size_type const Levels;
 			format_type const Format;
-			dimensions_type const Dimensions;
-			size_type const BlockSize;
-			dimensions_type const BlockDimensions;
-			std::vector<glm::byte> Data;
+			dim_type const Dimensions;
+			std::vector<data_type> Data;
 		};
 
-		shared_ptr<impl> Impl;
+		std::shared_ptr<impl> Impl;
 	};
 
 /*
@@ -195,17 +176,6 @@ namespace detail
 		storage::size_type const & DestinationlevelOffset);
 */
 
-	std::size_t block_size(format const & Format);
-	glm::uvec3 block_dimensions(format const & Format);
-	std::size_t component_count(format const & Format);
-	bool is_compressed(format const & Format);
-
-	std::size_t level_count(storage::dimensions1_type const & Dimensions);
-	std::size_t level_count(storage::dimensions2_type const & Dimensions);
-	std::size_t level_count(storage::dimensions3_type const & Dimensions);
-
 }//namespace gli
 
 #include "storage.inl"
-
-#endif//GLI_CORE_STORAGE_INCLUDED

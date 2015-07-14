@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2014 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -21,8 +21,41 @@
 /// THE SOFTWARE.
 ///
 /// @ref core
-/// @file gli/core/cow_ptr.inl
-/// @date 2013-01-12 / 2013-01-12
+/// @file gli/core/type.hpp
+/// @date 2014-07-28 / 2014-07-28
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+// STD
+#include <cstddef>
+
+// GLM
+#define GLM_FORCE_EXPLICIT_CTOR
+#include <glm/glm.hpp>
+#include <glm/gtc/vec1.hpp>
+#include <glm/gtx/std_based_type.hpp>
+
+// GLI
+#include "format.hpp"
+
+namespace gli
+{
+	using std::size_t;
+
+	typedef glm::tvec1<size_t> dim1_t;
+	typedef glm::tvec2<size_t> dim2_t;
+	typedef glm::tvec3<size_t> dim3_t;
+	typedef glm::tvec4<size_t> dim4_t;
+	typedef glm::vec1 texcoord1_t;
+	typedef glm::vec2 texcoord2_t;
+	typedef glm::vec3 texcoord3_t;
+	typedef glm::vec4 texcoord4_t;
+
+	typedef std::size_t layer_t;
+	typedef std::size_t level_t;
+	typedef std::size_t face_t;
+
+	typedef glm::tvec4<int> swizzle_t;
+}//namespace gli

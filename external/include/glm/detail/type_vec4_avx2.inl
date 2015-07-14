@@ -1,17 +1,21 @@
 ///////////////////////////////////////////////////////////////////////////////////
-/// OpenGL Image (gli.g-truc.net)
+/// OpenGL Mathematics (glm.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2005 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-///
+/// 
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-///
+/// 
+/// Restrictions:
+///		By making use of the Software for military purposes, you choose to make
+///		a Bunny unhappy.
+/// 
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,46 +25,17 @@
 /// THE SOFTWARE.
 ///
 /// @ref core
-/// @file gli/core/shared_array.hpp
-/// @date 2008-12-19 / 2013-01-12
+/// @file glm/detail/type_tvec4_avx2.inl
+/// @date 2014-12-01 / 2014-12-01
 /// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_SHARED_ARRAY_INCLUDED
-#define GLI_SHARED_ARRAY_INCLUDED
-
-namespace gli
+namespace glm{
+namespace detail
 {
-	template <typename T>
-	class shared_array
-	{
-	public:
-		shared_array();
-		shared_array(shared_array const & SharedArray);
-		shared_array(T * Pointer);
-		virtual ~shared_array();
 
-		void reset();
-		void reset(T * Pointer);
+}//namespace detail
 
-		T & operator*();
-		T * operator->();
-		T const & operator*() const;
-		T const * const operator->() const;
+	
 
-		T * get();
-		T const * const get() const;
-
-		shared_array & operator=(shared_array const & SharedArray);
-		bool operator==(shared_array const & SharedArray) const;
-		bool operator!=(shared_array const & SharedArray) const;
-
-	private:
-		long * Counter;
-		T * Pointer;
-	};
-}//namespace gli
-
-#include "shared_array.inl"
-
-#endif //GLI_SHARED_ARRAY_INCLUDED
+}//namespace glm

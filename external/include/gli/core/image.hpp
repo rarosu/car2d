@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -29,8 +29,7 @@
 /// @ingroup core
 ///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GLI_CORE_IMAGE_INCLUDED
-#define GLI_CORE_IMAGE_INCLUDED
+#pragma once
 
 #include "storage.hpp"
 #include "addressing.hpp"
@@ -42,24 +41,21 @@ namespace gli
 	class image
 	{
 	public:
-		typedef storage::dimensions1_type dimensions1_type;
-		typedef storage::dimensions2_type dimensions2_type;
-		typedef storage::dimensions3_type dimensions3_type;
-		typedef storage::dimensions3_type dimensions_type;
+		typedef storage::dim1_type dim1_type;
+		typedef storage::dim2_type dim2_type;
+		typedef storage::dim3_type dim3_type;
+		typedef storage::dim3_type dim_type;
 		typedef storage::size_type size_type;
+		typedef storage::size_type layer_type;
+		typedef storage::size_type level_type;
+		typedef storage::size_type face_type;
 
 		image();
 
 		/// Allocate a new storage constructor
 		explicit image(
-			dimensions_type const & Dimensions,
-			size_type const & BlockSize,
-			dimensions_type const & BlockDimensions);
-
-		/// Allocate a new storage constructor
-		explicit image(
 			format const & Format,
-			dimensions_type const & Dimensions);
+			dim_type const & Dimensions);
 
 		/// Reference an exiting storage constructor
 		explicit image(
@@ -72,7 +68,7 @@ namespace gli
 		operator storage() const;
 
 		bool empty() const;
-		dimensions_type dimensions() const;
+		dim_type dimensions() const;
 
 		size_type size() const;
 		void * data();
@@ -89,9 +85,9 @@ namespace gli
 		template <typename genType>
 		void clear(genType const & Texel);
 		template <typename genType>
-		genType load(dimensions_type const & TexelCoord);
+		genType load(dim_type const & TexelCoord);
 		template <typename genType>
-		void store(dimensions_type const & TexelCoord, genType const & Data);
+		void store(dim_type const & TexelCoord, genType const & Data);
 
 		size_type baseLayer() const;
 		size_type maxLayer() const;
@@ -112,5 +108,3 @@ namespace gli
 }//namespace gli
 
 #include "image.inl"
-
-#endif//GLI_CORE_IMAGE_INCLUDED

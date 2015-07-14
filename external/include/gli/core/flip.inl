@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -62,10 +62,10 @@ inline texture2D flip(texture2D const & Texture)
 
 	texture2D Flip(Texture.levels(), Texture.format(), Texture.dimensions());
 
-	detail::format_desc const & Desc = detail::getFormatInfo(Texture.format());
+	std::uint32_t const BlockSize = block_size(Texture.format());
 
 	for(std::size_t Level = 0; Level < Flip.levels(); ++Level)
-		detail::flip(Flip[Level], Texture[Level], Desc.BlockSize);
+		detail::flip(Flip[Level], Texture[Level], BlockSize);
 
 	return Flip;
 }
@@ -77,11 +77,11 @@ inline texture2DArray flip(texture2DArray const & Texture)
 
 	texture2DArray Flip(Texture.layers(), Texture.levels(), Texture.format(), Texture.dimensions());
 
-	detail::format_desc const & Desc = detail::getFormatInfo(Texture.format());
+	std::uint32_t const BlockSize = block_size(Texture.format());
 
 	for(std::size_t Layer = 0; Layer < Flip.layers(); ++Layer)
 	for(std::size_t Level = 0; Level < Flip.levels(); ++Level)
-		detail::flip(Flip[Layer][Level], Texture[Layer][Level], Desc.BlockSize);
+		detail::flip(Flip[Layer][Level], Texture[Layer][Level], BlockSize);
 
 	return Flip;
 }

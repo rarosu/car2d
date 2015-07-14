@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 /// OpenGL Image (gli.g-truc.net)
 ///
-/// Copyright (c) 2008 - 2013 G-Truc Creation (www.g-truc.net)
+/// Copyright (c) 2008 - 2015 G-Truc Creation (www.g-truc.net)
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
@@ -31,15 +31,15 @@ namespace gli
 	template <typename genType>
 	inline genType texelFetch
 	(
-		texture2D const & Texture, 
-		texture2D::dimensions_type const & TexCoord,
+		texture2D const & Texture,
+		texture2D::dim_type const & TexCoord,
 		texture2D::size_type const & Level
 	)
 	{
 		assert(!Texture.empty());
 		assert(!is_compressed(Texture.format()));
 
-		image::dimensions_type Dimensions = Texture[Level].dimensions();
+		image::dim_type Dimensions = Texture[Level].dimensions();
 		genType const * const Data = reinterpret_cast<genType const * const >(Texture[Level].data());
 
 		return reinterpret_cast<genType const * const>(Data)[TexCoord.x + TexCoord.y * Dimensions.x];
@@ -49,7 +49,7 @@ namespace gli
 	void texelWrite
 	(
 		texture2D & Texture,
-		texture2D::dimensions_type const & Texcoord,
+		texture2D::dim_type const & Texcoord,
 		texture2D::size_type const & Level,
 		genType const & Color
 	)
@@ -69,20 +69,20 @@ namespace gli
 	template <typename genType>
 	inline genType textureLod
 	(
-		texture2D const & Texture, 
-		texture2D::texcoord_type const & TexCoord, 
+		texture2D const & Texture,
+		texture2D::texcoord_type const & Texcoord,
 		texture2D::size_type const & Level
 	)
 	{
 		//assert(Texture.format() == R8U || Texture.format() == RG8U || Texture.format() == RGB8U || Texture.format() == RGBA8U);
 
-		image::dimensions_type Dimensions = Texture[Level].dimensions(); 
+		image::dim_type Dimensions = Texture[Level].dimensions();
 		genType const * const Data = reinterpret_cast<genType const * const>(Texture[Level].data());
 
-		std::size_t s_below = std::size_t(glm::floor(TexCoord.s * float(Dimensions.x - 1)));
-		std::size_t s_above = std::size_t(glm::ceil( TexCoord.s * float(Dimensions.x - 1)));
-		std::size_t t_below = std::size_t(glm::floor(TexCoord.t * float(Dimensions.y - 1)));
-		std::size_t t_above = std::size_t(glm::ceil( TexCoord.t * float(Dimensions.y - 1)));
+		std::size_t s_below = std::size_t(glm::floor(Texcoord.s * float(Dimensions.x - 1)));
+		std::size_t s_above = std::size_t(glm::ceil( Texcoord.s * float(Dimensions.x - 1)));
+		std::size_t t_below = std::size_t(glm::floor(Texcoord.t * float(Dimensions.y - 1)));
+		std::size_t t_above = std::size_t(glm::ceil( Texcoord.t * float(Dimensions.y - 1)));
 
 		float s_step = 1.0f / float(Dimensions.x);
 		float t_step = 1.0f / float(Dimensions.y);
@@ -97,9 +97,9 @@ namespace gli
 		genType Value3 = reinterpret_cast<genType const * const>(Data)[s_above + t_above * Dimensions.x];
 		genType Value4 = reinterpret_cast<genType const * const>(Data)[s_below + t_above * Dimensions.x];
 
-		float BlendA = float(TexCoord.s - s_below_normalized) * float(Dimensions.x - 1);
-		float BlendB = float(TexCoord.s - s_below_normalized) * float(Dimensions.x - 1);
-		float BlendC = float(TexCoord.t - t_below_normalized) * float(Dimensions.y - 1);
+		float BlendA = float(Texcoord.s - s_below_normalized) * float(Dimensions.x - 1);
+		float BlendB = float(Texcoord.s - s_below_normalized) * float(Dimensions.x - 1);
+		float BlendC = float(Texcoord.t - t_below_normalized) * float(Dimensions.y - 1);
 
 		genType ValueA(glm::mix(Value1, Value2, BlendA));
 		genType ValueB(glm::mix(Value4, Value3, BlendB));
