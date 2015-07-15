@@ -33,5 +33,8 @@ solution "car2d"
         language "C++"
         files { "code/car2d_main/**.hpp", "code/car2d_main/**.cpp" }
         objdir "build/car2d_main/obj/"
-        links { "opengl32", "SDL2", "SDL2main", "gl3w" }
         
+        configuration { "Debug" }
+            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmdd" }
+        configuration { "Release" }
+            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmd" }

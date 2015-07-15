@@ -1,11 +1,16 @@
 #pragma once
 
+#include <string>
 #include <SDL2/SDL.h>
+#include <yaml-cpp/yaml.h>
 #include "ticker.hpp"
 
 const float DT = 1.0f / 60.0f;
 const int OPENGL_VERSION_MAJOR = 4;
 const int OPENGL_VERSION_MINOR = 4;
+const std::string WINDOW_TITLE = "Car2D";
+const std::string CONFIG_ROOT = "../../../";
+const std::string CONFIG_FILE = "config.yaml";
 
 struct InputState
 {
@@ -22,6 +27,8 @@ public:
 
 	void start();
 private:
+	YAML::Node config;
+
 	SDL_Window* window;
 	SDL_GLContext glcontext;
 	bool running;

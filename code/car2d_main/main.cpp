@@ -7,6 +7,7 @@
 
 int main(int argc, char* argv[])
 {
+	int result = 0;
 	try
 	{
 		Car2DMain m;
@@ -14,12 +15,18 @@ int main(int argc, char* argv[])
 	}
 	catch (std::exception& e)
 	{
-		return 1;
+		std::cerr << e.what() << std::endl;
+		std::cin.get();
+		result = 1;
+	}
+	catch (...)
+	{
+		std::cerr << "Unrecognized exception caught at outmost level." << std::endl;
+		std::cin.get();
+		result = 1;
 	}
 
-	std::cin.get();
-
-    return 0;
+	return result;
 }
 
 void __stdcall output_debug_message(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param)
@@ -36,11 +43,12 @@ InputState::InputState()
 }
 
 Car2DMain::Car2DMain()
-	: window(nullptr)
+	: config(YAML::LoadFile(CONFIG_ROOT + CONFIG_FILE))
+	, window(nullptr)
 	, glcontext(nullptr)
 	, running(true)
-	, viewport_width(0)
-	, viewport_height(0)
+	, viewport_width(config["Window"]["Width"].as<int>())
+	, viewport_height(config["Window"]["Height"].as<int>())
 	, ticker(DT, 5)
 {
 	setup_context();
@@ -60,7 +68,7 @@ void Car2DMain::setup_context()
 		throw std::runtime_error(std::string("Failed to initialize SDL: ") + SDL_GetError());
 	}
 
-	window = SDL_CreateWindow("Car2D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow(WINDOW_TITLE.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewport_width, viewport_height, SDL_WINDOW_OPENGL);
 	if (window == nullptr)
 	{
 		throw std::runtime_error(std::string("Failed to create window: ") + SDL_GetError());
@@ -117,13 +125,11 @@ void Car2DMain::setup_context()
 	}
 
 	// Set V-Sync enabled.
-	SDL_GL_SetSwapInterval(1);
+	SDL_GL_SetSwapInterval(0);
 }
 
 void Car2DMain::start()
 {
-	Uint32 last_clock = SDL_GetTicks();
-
 	ticker.start();
 	while (running)
 	{
@@ -132,10 +138,6 @@ void Car2DMain::start()
 		handle_events();
 		while (ticker.poll_fixed_tick())
 		{
-			Uint32 current_clock = SDL_GetTicks();
-			Uint32 delta_clock = static_cast<Uint32>(current_clock - last_clock);
-			last_clock = current_clock;
-
 			update(DT);
 		}
 
@@ -189,5 +191,7 @@ void Car2DMain::update(float dt)
 
 void Car2DMain::render(float dt, float interpolation)
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	SDL_GL_SwapWindow(window);
 }
