@@ -31,7 +31,7 @@ solution "car2d"
     project "car2d_main"
         kind "ConsoleApp"
         language "C++"
-        files { "code/car2d_main/**.hpp", "code/car2d_main/**.cpp" }
+        files { "code/car2d_main/**.hpp", "code/car2d_main/**.cpp", "assets/shaders/**.vert", "assets/shaders/**.frag" }
         objdir "build/car2d_main/obj/"
         
         configuration { "Debug" }

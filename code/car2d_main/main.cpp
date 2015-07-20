@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#define NOMINMAX
 #include <GL/gl3w.h>
 
 int main(int argc, char* argv[])
@@ -15,7 +16,7 @@ int main(int argc, char* argv[])
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << "Exception caught: " << e.what() << std::endl;
 		std::cin.get();
 		result = 1;
 	}
@@ -37,30 +38,9 @@ void __stdcall output_debug_message(GLenum source, GLenum type, GLuint id, GLenu
 	}
 }
 
-InputState::InputState()
-{
-	memset(keys, 0, sizeof(keys));
-}
-
-Car2DMain::Car2DMain()
-	: config(YAML::LoadFile(CONFIG_ROOT + CONFIG_FILE))
-	, window(nullptr)
+WindowContext::WindowContext(const YAML::Node& config, int viewport_width, int viewport_height)
+	: window(nullptr)
 	, glcontext(nullptr)
-	, running(true)
-	, viewport_width(config["Window"]["Width"].as<int>())
-	, viewport_height(config["Window"]["Height"].as<int>())
-	, ticker(DT, 5)
-{
-	setup_context();
-}
-
-Car2DMain::~Car2DMain()
-{
-	SDL_GL_DeleteContext(glcontext);
-	SDL_DestroyWindow(window);
-}
-
-void Car2DMain::setup_context()
 {
 	// Setup SDL.
 	if (SDL_Init(SDL_INIT_TIMER) != 0)
@@ -68,7 +48,7 @@ void Car2DMain::setup_context()
 		throw std::runtime_error(std::string("Failed to initialize SDL: ") + SDL_GetError());
 	}
 
-	window = SDL_CreateWindow(WINDOW_TITLE.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewport_width, viewport_height, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow(config["Window"]["Title"].as<std::string>().c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewport_width, viewport_height, SDL_WINDOW_OPENGL);
 	if (window == nullptr)
 	{
 		throw std::runtime_error(std::string("Failed to create window: ") + SDL_GetError());
@@ -110,10 +90,8 @@ void Car2DMain::setup_context()
 
 	// Setup the initial OpenGL context state.
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glViewport(0, 0, 800, 600);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-	glClearDepth(1.0f);
+	glViewport(0, 0, viewport_width, viewport_height);
+	//glEnable(GL_CULL_FACE);
 
 	{
 		int major;
@@ -125,7 +103,44 @@ void Car2DMain::setup_context()
 	}
 
 	// Set V-Sync enabled.
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(1);
+}
+
+WindowContext::~WindowContext()
+{
+	SDL_GL_DeleteContext(glcontext);
+	SDL_DestroyWindow(window);
+}
+
+Car2DMain::Car2DMain()
+	: config(YAML::LoadFile(PROJECT_ROOT + FILE_CONFIG))
+	, viewport_width(config["Window"]["Width"].as<int>())
+	, viewport_height(config["Window"]["Height"].as<int>())
+	, running(true)
+	, window_context(config, viewport_width, viewport_height)
+	, ticker(DT, 5)
+	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config)
+{
+	setup_resources();
+}
+
+Car2DMain::~Car2DMain()
+{
+	
+}
+
+void Car2DMain::setup_resources()
+{
+	camera.set_scale(2.0f / 50.0f);
+	camera.set_origin(glm::vec2(0.0f, 15.0f));
+	camera.set_facing(glm::vec2(0.0f, 1.0f));
+	camera.recalculate_matrices();
+
+	uniform_frame_data.view_matrix = glm::mat3x4(camera.get_view());
+	uniform_frame_data.projection_matrix = glm::mat3x4(camera.get_projection());
+	glGenBuffers(1, &uniform_frame_buffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrame), &uniform_frame_data, GL_DYNAMIC_DRAW);
 }
 
 void Car2DMain::start()
@@ -186,12 +201,30 @@ void Car2DMain::handle_events()
 
 void Car2DMain::update(float dt)
 {
-	
+	// Update the car.
+	car.update(dt, input_state_current, input_state_previous);
+
+	// Update the per frame buffer.
+	static float angle = 0.0f;
+	angle += dt;
+	camera.set_facing(glm::vec2(std::cos(angle), std::sin(angle)));
+
+	//camera.set_origin(glm::vec2(0.0f, 15.0f));
+	camera.recalculate_matrices();
+
+	uniform_frame_data.view_matrix = glm::mat3x4(camera.get_view());
+	uniform_frame_data.projection_matrix = glm::mat3x4(camera.get_projection());
+	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerFrame), &uniform_frame_data);
 }
 
 void Car2DMain::render(float dt, float interpolation)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	SDL_GL_SwapWindow(window);
+	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
+
+	car.render(dt, interpolation);
+
+	SDL_GL_SwapWindow(window_context.window);
 }

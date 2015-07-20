@@ -1,0 +1,18 @@
+Mass: 1200
+TorqueCurve:
+    - [1000, 220]
+    - [4600, 310]
+    - [7000, 230]
+SlipCurve:
+    - [-1.0, -0.4]
+    - [-0.05, -1.2]
+    - [0.05, 1.2]
+    - [1.0, 0.4]
+CGToFront: 2.0
+CGToBack: 2.0
+CGHeight: 0.3
+HalfWidth: 0.55
+CGToFrontAxle: 1.25
+CGToBackAxle: 1.25
+WheelRadius: 0.3
+WheelWidth: 0.2

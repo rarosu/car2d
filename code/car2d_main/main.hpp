@@ -1,22 +1,21 @@
 #pragma once
 
-#include <string>
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
+#include "config.hpp"
 #include "ticker.hpp"
+#include "input.hpp"
+#include "car.hpp"
+#include "camera.hpp"
 
-const float DT = 1.0f / 60.0f;
-const int OPENGL_VERSION_MAJOR = 4;
-const int OPENGL_VERSION_MINOR = 4;
-const std::string WINDOW_TITLE = "Car2D";
-const std::string CONFIG_ROOT = "../../../";
-const std::string CONFIG_FILE = "config.yaml";
-
-struct InputState
+class WindowContext
 {
-	bool keys[SDL_NUM_SCANCODES];
+public:
+	SDL_Window* window;
+	SDL_GLContext glcontext;
 
-	InputState();
+	WindowContext(const YAML::Node& config, int viewport_width, int viewport_height);
+	~WindowContext();
 };
 
 class Car2DMain
@@ -28,18 +27,19 @@ public:
 	void start();
 private:
 	YAML::Node config;
-
-	SDL_Window* window;
-	SDL_GLContext glcontext;
-	bool running;
-	InputState input_state_current;
-	InputState input_state_previous;
 	int viewport_width;
 	int viewport_height;
-
+	bool running;
+	WindowContext window_context;
+	InputState input_state_current;
+	InputState input_state_previous;
 	Ticker ticker;
+	Car car;
+	Camera camera;
+	PerFrame uniform_frame_data;
+	GLuint uniform_frame_buffer;
 
-	void setup_context();
+	void setup_resources();
 	void handle_events();
 	void update(float dt);
 	void render(float dt, float interpolation);

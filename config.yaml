@@ -1,4 +1,5 @@
 Window:
+    Title: Car2D
     Width: 800
     Height: 600
     
@@ -15,3 +16,15 @@ Controls:
     Right:
         - D
         - Right
+    GearUp:
+        - R
+    GearDown:
+        - F
+    ToggleAutomatic:
+        - T
+        
+World:
+    Gravity: 9.82
+    
+Assets:
+    DefaultCar: test_car.yaml
