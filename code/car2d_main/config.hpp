@@ -10,9 +10,12 @@ const std::string PROJECT_ROOT = "../../../";
 const std::string DIRECTORY_ASSETS = PROJECT_ROOT + "assets/";
 const std::string DIRECTORY_CARS = DIRECTORY_ASSETS + "cars/";
 const std::string DIRECTORY_SHADERS = DIRECTORY_ASSETS + "shaders/";
+const std::string DIRECTORY_MAPS = DIRECTORY_ASSETS + "maps/";
 const std::string FILE_CONFIG = "config.yaml";
-const std::string FILE_MESH2D_VS = "plain_2d.vert";
-const std::string FILE_MESH2D_FS = "plain_2d.frag";
+const std::string FILE_PLAIN2D_VS = "plain_2d.vert";
+const std::string FILE_PLAIN2D_FS = "plain_2d.frag";
+const std::string FILE_MESH2D_VS = "mesh_2d.vert";
+const std::string FILE_MESH2D_FS = "mesh_2d.frag";
 
 const int UNIFORM_FRAME_BINDING = 1;
 const int UNIFORM_INSTANCE_BINDING = 2;

@@ -12,6 +12,7 @@ public:
 	void set_origin(const glm::vec2& origin);
 	void recalculate_matrices();
 	const glm::vec2& get_facing() const;
+	glm::vec2 get_right() const;
 	const glm::vec2& get_origin() const;
 	const glm::mat3& get_view() const;
 	const glm::mat3& get_projection() const;

@@ -47,8 +47,8 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 	
-	mesh_vs = compile_shader_from_file(DIRECTORY_SHADERS + FILE_MESH2D_VS, GL_VERTEX_SHADER);
-	mesh_fs = compile_shader_from_file(DIRECTORY_SHADERS + FILE_MESH2D_FS, GL_FRAGMENT_SHADER);
+	mesh_vs = compile_shader_from_file(DIRECTORY_SHADERS + FILE_PLAIN2D_VS, GL_VERTEX_SHADER);
+	mesh_fs = compile_shader_from_file(DIRECTORY_SHADERS + FILE_PLAIN2D_FS, GL_FRAGMENT_SHADER);
 	mesh_program = glCreateProgram();
 	glAttachShader(mesh_program, mesh_vs);
 	glAttachShader(mesh_program, mesh_fs);

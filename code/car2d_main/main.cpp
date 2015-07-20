@@ -5,6 +5,7 @@
 #include <sstream>
 #define NOMINMAX
 #include <GL/gl3w.h>
+#include "debug.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -120,6 +121,7 @@ Car2DMain::Car2DMain()
 	, window_context(config, viewport_width, viewport_height)
 	, ticker(DT, 5)
 	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config)
+	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 {
 	setup_resources();
 }
@@ -205,11 +207,12 @@ void Car2DMain::update(float dt)
 	car.update(dt, input_state_current, input_state_previous);
 
 	// Update the per frame buffer.
-	static float angle = 0.0f;
-	angle += dt;
-	camera.set_facing(glm::vec2(std::cos(angle), std::sin(angle)));
+	//static float angle = 0.0f;
+	//angle += dt;
+	//camera.set_facing(glm::vec2(std::cos(angle), std::sin(angle)));
 
 	//camera.set_origin(glm::vec2(0.0f, 15.0f));
+	update_camera_free(dt);
 	camera.recalculate_matrices();
 
 	uniform_frame_data.view_matrix = glm::mat3x4(camera.get_view());
@@ -218,12 +221,44 @@ void Car2DMain::update(float dt)
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerFrame), &uniform_frame_data);
 }
 
+void Car2DMain::update_camera_free(float dt)
+{
+	// Update a free-moving camera, controlled by the arrow keys.
+	// For debug purposes only.
+	const float CAMERA_SPEED = 10.0f;
+	const float CAMERA_TURNSPEED = 3.14f;
+
+	glm::vec2 origin = camera.get_origin();
+	glm::vec2 facing = camera.get_facing();
+	glm::vec2 right = camera.get_right();
+	//glm::vec2 facing = glm::vec2(0, 1);
+	//glm::vec2 right = glm::vec2(1, 0);
+	if (input_state_current.keys[SDL_SCANCODE_W] || input_state_current.keys[SDL_SCANCODE_UP])
+		origin += facing * CAMERA_SPEED * dt;
+	if (input_state_current.keys[SDL_SCANCODE_S] || input_state_current.keys[SDL_SCANCODE_DOWN])
+		origin -= facing * CAMERA_SPEED * dt;
+	if (input_state_current.keys[SDL_SCANCODE_D] || input_state_current.keys[SDL_SCANCODE_RIGHT])
+		origin += right * CAMERA_SPEED * dt;
+	if (input_state_current.keys[SDL_SCANCODE_A] || input_state_current.keys[SDL_SCANCODE_LEFT])
+		origin -= right * CAMERA_SPEED * dt;
+	camera.set_origin(origin);
+
+	float angle = std::atan2(camera.get_facing().y, camera.get_facing().x);
+	if (input_state_current.keys[SDL_SCANCODE_Q])
+		angle -= CAMERA_TURNSPEED * dt;
+	if (input_state_current.keys[SDL_SCANCODE_E])
+		angle += CAMERA_TURNSPEED * dt;
+	facing = glm::vec2(std::cos(angle), std::sin(angle));
+	camera.set_facing(facing);
+}
+
 void Car2DMain::render(float dt, float interpolation)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
 
+	road.render();
 	car.render(dt, interpolation);
 
 	SDL_GL_SwapWindow(window_context.window);

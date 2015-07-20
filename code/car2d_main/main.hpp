@@ -5,8 +5,9 @@
 #include "config.hpp"
 #include "ticker.hpp"
 #include "input.hpp"
-#include "car.hpp"
 #include "camera.hpp"
+#include "car.hpp"
+#include "road.hpp"
 
 class WindowContext
 {
@@ -34,13 +35,15 @@ private:
 	InputState input_state_current;
 	InputState input_state_previous;
 	Ticker ticker;
-	Car car;
 	Camera camera;
+	Car car;
+	Road road;
 	PerFrame uniform_frame_data;
 	GLuint uniform_frame_buffer;
 
 	void setup_resources();
 	void handle_events();
 	void update(float dt);
+	void update_camera_free(float dt);
 	void render(float dt, float interpolation);
 };

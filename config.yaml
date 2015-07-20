@@ -28,3 +28,4 @@ World:
     
 Assets:
     DefaultCar: test_car.yaml
+    DefaultMap: test_map.yaml
