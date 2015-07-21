@@ -1,5 +1,7 @@
 #pragma once
 
+#define NOMINMAX
+
 #include <yaml-cpp/yaml.h>
 #include <glm/glm.hpp>
 #include <GL/gl3w.h>

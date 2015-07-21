@@ -50,8 +50,8 @@ Road::Road(const YAML::Node& map_file)
 
 void Road::render()
 {
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glUseProgram(mesh_program);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
@@ -83,12 +83,14 @@ void RoadSegment::construct_buffers(float step_length, float road_width, float s
 	std::vector<glm::vec2> road_texcoords;
 	float step_accumulator = 0.0f;
 	float length = get_length();
-	while (step_accumulator + step_length < length)
+	int step_count = static_cast<int>(glm::ceil(length / step_length));
+	for (int i = 0; i < step_count; ++i)
+	//while (step_accumulator + step_length < length)
 	{
 		float t1 = get_parameter_at_distance(step_accumulator);
-		float t2 = get_parameter_at_distance(step_accumulator + step_length);
-		step_accumulator += step_length;
-
+		step_accumulator = glm::min(step_accumulator + step_length, length);
+		float t2 = get_parameter_at_distance(step_accumulator);
+		
 		glm::vec2 p1 = get_position(t1);
 		glm::vec2 p2 = get_position(t2);
 

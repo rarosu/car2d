@@ -49,7 +49,7 @@ WindowContext::WindowContext(const YAML::Node& config, int viewport_width, int v
 		throw std::runtime_error(std::string("Failed to initialize SDL: ") + SDL_GetError());
 	}
 
-	window = SDL_CreateWindow(config["Window"]["Title"].as<std::string>().c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewport_width, viewport_height, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow(config["Window"]["Title"].as<std::string>().c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewport_width, viewport_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if (window == nullptr)
 	{
 		throw std::runtime_error(std::string("Failed to create window: ") + SDL_GetError());
@@ -120,6 +120,7 @@ Car2DMain::Car2DMain()
 	, running(true)
 	, window_context(config, viewport_width, viewport_height)
 	, ticker(DT, 5)
+	, camera(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height))
 	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config)
 	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 {
@@ -133,7 +134,6 @@ Car2DMain::~Car2DMain()
 
 void Car2DMain::setup_resources()
 {
-	camera.set_scale(2.0f / 50.0f);
 	camera.set_origin(glm::vec2(0.0f, 15.0f));
 	camera.set_facing(glm::vec2(0.0f, 1.0f));
 	camera.recalculate_matrices();
@@ -178,12 +178,15 @@ void Car2DMain::handle_events()
 
 			case SDL_WINDOWEVENT:
 			{
-				switch (event.window.type)
+				switch (event.window.event)
 				{
 					case SDL_WINDOWEVENT_RESIZED:
 					{
 						viewport_width = event.window.data1;
 						viewport_height = event.window.data2;
+						glViewport(0, 0, viewport_width, viewport_height);
+						camera.set_projection(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height));
+						std::cout << "Window resized to " << viewport_width << "x" << viewport_height << std::endl;
 					} break;
 				}
 			} break;
@@ -231,8 +234,7 @@ void Car2DMain::update_camera_free(float dt)
 	glm::vec2 origin = camera.get_origin();
 	glm::vec2 facing = camera.get_facing();
 	glm::vec2 right = camera.get_right();
-	//glm::vec2 facing = glm::vec2(0, 1);
-	//glm::vec2 right = glm::vec2(1, 0);
+
 	if (input_state_current.keys[SDL_SCANCODE_W] || input_state_current.keys[SDL_SCANCODE_UP])
 		origin += facing * CAMERA_SPEED * dt;
 	if (input_state_current.keys[SDL_SCANCODE_S] || input_state_current.keys[SDL_SCANCODE_DOWN])

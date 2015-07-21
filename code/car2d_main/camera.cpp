@@ -1,16 +1,15 @@
 #include "camera.hpp"
 
-Camera::Camera()
+Camera::Camera(const glm::mat3& projection)
 	: facing(0, 1)
+	, projection(projection)
 {
 
 }
 
-void Camera::set_scale(float scale)
+void Camera::set_projection(const glm::mat3& projection)
 {
-	projection = glm::mat3(scale, 0,	 0,
-						   0,	  scale, 0,
-						   0,	  0,	 1);
+	this->projection = projection;
 }
 
 void Camera::set_facing(const glm::vec2& facing)
@@ -75,4 +74,12 @@ const glm::mat3& Camera::get_view() const
 const glm::mat3& Camera::get_projection() const
 {
 	return projection;
+}
+
+glm::mat3 Camera::create_projection(float scale, float viewport_width, float viewport_height)
+{
+	float aspect = viewport_height / viewport_width;
+	return glm::mat3(scale * aspect, 0,		0,
+					 0,				 scale,	0,
+					 0,				 0,		1);
 }

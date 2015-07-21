@@ -2,6 +2,9 @@ Window:
     Title: Car2D
     Width: 800
     Height: 600
+
+Camera:
+    ZoomLevel: 50.0
     
 Controls:
     Accelerate:
