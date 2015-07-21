@@ -14,6 +14,7 @@ class Road
 {
 public:
 	Road(const YAML::Node& map_file);
+	~Road();
 
 	void render();
 private:
@@ -24,6 +25,8 @@ private:
 	GLuint mesh_fs;
 	GLuint mesh_program;
 	GLuint uniform_instance_buffer;
+	GLuint texture;
+	GLuint sampler;
 };
 
 class RoadSegment
@@ -36,6 +39,7 @@ public:
 
 	/* Initialize empty buffers. */
 	RoadSegment();
+	~RoadSegment();
 
 	/* Get the position at t-value in [0, 1] */
 	virtual glm::vec2 get_position(float t) const = 0;
@@ -56,7 +60,7 @@ public:
 	virtual float get_parameter_at_distance(float distance) const = 0;
 
 	/* Setup the OpenGL buffers for this segment. */
-	void construct_buffers(float step_length, float road_width, float shoulder_width);
+	void construct_buffers(float step_length, float road_width, float shoulder_width, float texcoord_scale);
 };
 
 /* A straight line. */

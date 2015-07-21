@@ -8,8 +8,8 @@ SlipCurve:
     - [-0.05, -1.2]
     - [0.05, 1.2]
     - [1.0, 0.4]
-CGToFront: 2.0
-CGToBack: 2.0
+CGToFront: 1.75
+CGToBack: 1.75
 CGHeight: 0.3
 HalfWidth: 0.55
 CGToFrontAxle: 1.25

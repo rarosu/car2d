@@ -1,5 +1,6 @@
 #include "road.hpp"
 #include "shader.hpp"
+#include <gli/gli.hpp>
 
 Road::Road(const YAML::Node& map_file)
 	: segments(map_file["Segments"].size())
@@ -14,21 +15,21 @@ Road::Road(const YAML::Node& map_file)
 		{
 			segments[i] = new RoadSegmentStraight(glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 												  glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
 		}
 		else if (type == "BezierQuadratic")
 		{
 			segments[i] = new RoadSegmentBezierQuadratic(glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 														 glm::vec2(segment_node["Control"][0].as<float>(), segment_node["Control"][1].as<float>()),
 														 glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
 		}
 		else if (type == "Arc")
 		{
 			segments[i] = new RoadSegmentArc(glm::vec2(segment_node["Center"][0].as<float>(), segment_node["Center"][1].as<float>()),
 											 glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 											 glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
 		}
 	}
 
@@ -46,15 +47,49 @@ Road::Road(const YAML::Node& map_file)
 	glGenBuffers(1, &uniform_instance_buffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerInstance), &uniform_instance_data, GL_STATIC_DRAW);
+
+	// Load the texture and create a sampler.
+	gli::storage teximage = gli::load_dds(DIRECTORY_TEXTURES + map_file["Texture"].as<std::string>());
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, teximage.dimensions(0).x, teximage.dimensions(0).y, 0, GL_BGR, GL_UNSIGNED_BYTE, teximage.data());
+
+	glGenSamplers(1, &sampler);
+	glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+Road::~Road()
+{
+	for (int i = 0; i < segments.size(); ++i)
+	{
+		delete segments[i];
+	}
+
+	glDeleteBuffers(1, &uniform_instance_buffer);
+	glDetachShader(mesh_program, mesh_vs);
+	glDetachShader(mesh_program, mesh_fs);
+	glDeleteProgram(mesh_program);
+	glDeleteShader(mesh_vs);
+	glDeleteShader(mesh_fs);
+	glDeleteSamplers(1, &sampler);
+	glDeleteTextures(1, &texture);
 }
 
 void Road::render()
 {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glUseProgram(mesh_program);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
+	
+	glActiveTexture(GL_TEXTURE0 + TEXTURE_DIFFUSE_BINDING);
+	glBindSampler(TEXTURE_DIFFUSE_BINDING, sampler);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	
 	for (int i = 0; i < segments.size(); ++i)
 	{
@@ -72,15 +107,23 @@ RoadSegment::RoadSegment()
 
 }
 
+RoadSegment::~RoadSegment()
+{
+	glDeleteVertexArrays(1, &road_vao);
+	glDeleteBuffers(1, &road_position_vbo);
+	glDeleteBuffers(1, &road_texcoord_vbo);
+}
+
 float RoadSegment::get_length() const
 {
 	return get_length(1.0f);
 }
 
-void RoadSegment::construct_buffers(float step_length, float road_width, float shoulder_width)
+void RoadSegment::construct_buffers(float step_length, float road_width, float shoulder_width, float texcoord_scale)
 {
 	std::vector<glm::vec2> road_positions;
 	std::vector<glm::vec2> road_texcoords;
+	float texcoord_accumulator = 0.0f;
 	float step_accumulator = 0.0f;
 	float length = get_length();
 	int step_count = static_cast<int>(glm::ceil(length / step_length));
@@ -103,12 +146,15 @@ void RoadSegment::construct_buffers(float step_length, float road_width, float s
 		road_positions.push_back(glm::vec2(p1 + n1 * road_width));
 		road_positions.push_back(glm::vec2(p2 + n2 * road_width));
 
-		road_texcoords.push_back(glm::vec2(0.0f, 1.0f));
-		road_texcoords.push_back(glm::vec2(0.0f, 0.0f));
-		road_texcoords.push_back(glm::vec2(1.0f, 0.0f));
-		road_texcoords.push_back(glm::vec2(0.0f, 1.0f));
-		road_texcoords.push_back(glm::vec2(1.0f, 0.0f));
-		road_texcoords.push_back(glm::vec2(1.0f, 1.0f));
+		road_texcoords.push_back(glm::vec2(0.0f, texcoord_accumulator + texcoord_scale));
+		road_texcoords.push_back(glm::vec2(0.0f, texcoord_accumulator));
+		road_texcoords.push_back(glm::vec2(1.0f, texcoord_accumulator));
+		road_texcoords.push_back(glm::vec2(0.0f, texcoord_accumulator + texcoord_scale));
+		road_texcoords.push_back(glm::vec2(1.0f, texcoord_accumulator));
+		road_texcoords.push_back(glm::vec2(1.0f, texcoord_accumulator + texcoord_scale));
+		texcoord_accumulator += texcoord_scale;
+		if (texcoord_accumulator >= 1.0f)
+			texcoord_accumulator = 0.0f;
 	}
 
 	road_vertex_count = road_positions.size();
