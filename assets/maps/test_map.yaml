@@ -1,16 +1,5 @@
 Texture: dirt.dds
 Segments:
-    #-
-    #    Type: Straight
-    #    Width: 3.0
-    #    Start: [0.0, 0.0]
-    #    End: [20.0, 0.0]
-    #-
-    #    Type: BezierQuadratic
-    #    Width: 3.0
-    #    Start: [20.0, 0.0]
-    #    Control: [30.0, 20.0]
-    #    End: [20.0, 40.0]
     -
         Type: Arc
         Width: 3.0
@@ -33,3 +22,9 @@ Segments:
         Center: [0.0, 20.0]
         Start: [10.0, 20.0]
         End: [0.0, 30.0]
+    -
+        Type: BezierQuadratic
+        Width: 3.0
+        Start: [0.0, 30.0]
+        Control: [-20.0, 30.0]
+        End: [-30.0, 50.0]

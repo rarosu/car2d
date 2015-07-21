@@ -85,7 +85,6 @@ void RoadSegment::construct_buffers(float step_length, float road_width, float s
 	float length = get_length();
 	int step_count = static_cast<int>(glm::ceil(length / step_length));
 	for (int i = 0; i < step_count; ++i)
-	//while (step_accumulator + step_length < length)
 	{
 		float t1 = get_parameter_at_distance(step_accumulator);
 		step_accumulator = glm::min(step_accumulator + step_length, length);
@@ -192,10 +191,7 @@ glm::vec2 RoadSegmentBezierQuadratic::get_normal(float t) const
 
 glm::vec2 RoadSegmentBezierQuadratic::get_tangent(float t) const
 {
-	glm::vec2 segstart = get_position(t);
-	glm::vec2 segend = get_position(t + INTERPOLATION_DELTA <= 1.0f ? t + INTERPOLATION_DELTA : 1.0f);
-	glm::vec2 tangent = segend - segstart;
-	return tangent / glm::length(tangent);
+	return glm::normalize(-2 * (1 - t) * start + 2 * (1 - 2 * t) * control + 2 * t * end);
 }
 
 float RoadSegmentBezierQuadratic::get_length(float t) const
@@ -226,7 +222,7 @@ float RoadSegmentBezierQuadratic::get_parameter_at_distance(float distance) cons
 		glm::vec2 segstart = get_position(t);
 		glm::vec2 segend = get_position(t + INTERPOLATION_DELTA);
 		float seglength = glm::length(segend - segstart);
-		if (length + seglength < distance)
+		if (length + seglength <= distance)
 		{
 			t += INTERPOLATION_DELTA;
 			length += seglength;
@@ -241,7 +237,7 @@ float RoadSegmentBezierQuadratic::get_parameter_at_distance(float distance) cons
 	glm::vec2 segstart = get_position(t);
 	glm::vec2 segend = get_position(t + INTERPOLATION_DELTA);
 	float seglength = glm::length(segend - segstart);
-	t += (distance - length) / seglength;
+	t += INTERPOLATION_DELTA * (distance - length) / seglength;
 
 	return t;
 }
