@@ -15,21 +15,21 @@ Road::Road(const YAML::Node& map_file)
 		{
 			segments[i] = new RoadSegmentStraight(glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 												  glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, segment_node["TextureScale"].as<float>());
 		}
 		else if (type == "BezierQuadratic")
 		{
 			segments[i] = new RoadSegmentBezierQuadratic(glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 														 glm::vec2(segment_node["Control"][0].as<float>(), segment_node["Control"][1].as<float>()),
 														 glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, segment_node["TextureScale"].as<float>());
 		}
 		else if (type == "Arc")
 		{
 			segments[i] = new RoadSegmentArc(glm::vec2(segment_node["Center"][0].as<float>(), segment_node["Center"][1].as<float>()),
 											 glm::vec2(segment_node["Start"][0].as<float>(), segment_node["Start"][1].as<float>()),
 											 glm::vec2(segment_node["End"][0].as<float>(), segment_node["End"][1].as<float>()));
-			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, 0.1f);
+			segments[i]->construct_buffers(1.0f, segment_node["Width"].as<float>(), 0.0f, segment_node["TextureScale"].as<float>());
 		}
 	}
 
@@ -49,7 +49,7 @@ Road::Road(const YAML::Node& map_file)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerInstance), &uniform_instance_data, GL_STATIC_DRAW);
 
 	// Load the texture and create a sampler.
-	gli::storage teximage = gli::load_dds(DIRECTORY_TEXTURES + map_file["Texture"].as<std::string>());
+	gli::storage teximage = gli::load_dds(DIRECTORY_TEXTURES + map_file["RoadTexture"].as<std::string>());
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);

@@ -17,6 +17,8 @@ const std::string FILE_PLAIN2D_VS = "plain_2d.vert";
 const std::string FILE_PLAIN2D_FS = "plain_2d.frag";
 const std::string FILE_MESH2D_VS = "mesh_2d.vert";
 const std::string FILE_MESH2D_FS = "mesh_2d.frag";
+const std::string FILE_TERRAIN_VS = "terrain.vert";
+const std::string FILE_TERRAIN_FS = "terrain.frag";
 
 const int UNIFORM_FRAME_BINDING = 1;
 const int UNIFORM_INSTANCE_BINDING = 2;

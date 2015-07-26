@@ -8,6 +8,7 @@
 #include "camera.hpp"
 #include "car.hpp"
 #include "road.hpp"
+#include "terrain.hpp"
 
 class WindowContext
 {
@@ -38,6 +39,7 @@ private:
 	Camera camera;
 	Car car;
 	Road road;
+	Terrain terrain;
 	PerFrame uniform_frame_data;
 	GLuint uniform_frame_buffer;
 

@@ -122,6 +122,7 @@ Car2DMain::Car2DMain()
 	, ticker(DT, 5)
 	, camera(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height))
 	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config)
+	, terrain(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 {
 	setup_resources();
@@ -260,6 +261,7 @@ void Car2DMain::render(float dt, float interpolation)
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
 
+	terrain.render();
 	road.render();
 	car.render(dt, interpolation);
 
