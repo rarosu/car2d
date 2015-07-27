@@ -1,18 +1,43 @@
-Mass: 1200
+# The mass of the car excluding the wheels.
+Mass: 1200.0
+
+# The engine torque curve (values are linearly interpolated).
 TorqueCurve:
     - [1000, 220]
     - [4600, 310]
     - [7000, 230]
+
+# The wheel slip curve.
 SlipCurve:
     - [-1.0, -0.4]
     - [-0.05, -1.2]
     - [0.05, 1.2]
     - [1.0, 0.4]
+
+# The transmission ratios for the gears and the differential.
+GearRatios:
+    Reverse: 2.90
+    First: 2.66
+    Second: 1.78
+    Third: 1.30
+    Fourth: 1.0
+    Fifth: 0.74
+DifferentialRatio: 3.42
+    
+# The efficiency of the transmission (percentage of remaining energy).
+TransmissionEfficiency: 0.7
+
+# The geometry of the car from center of gravity (CG) to various parts.
 CGToFront: 1.75
 CGToBack: 1.75
 CGHeight: 0.3
 HalfWidth: 0.55
 CGToFrontAxle: 1.25
 CGToBackAxle: 1.25
+
+# Wheel and steering attributes.
+WheelMass: 75.0
 WheelRadius: 0.3
 WheelWidth: 0.2
+WheelFriction: 1.5
+MaxSteerAngle: 0.4

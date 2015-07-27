@@ -47,5 +47,6 @@ private:
 	void handle_events();
 	void update(float dt);
 	void update_camera_free(float dt);
+	void update_camera_chase();
 	void render(float dt, float interpolation);
 };

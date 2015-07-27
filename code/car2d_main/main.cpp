@@ -216,7 +216,8 @@ void Car2DMain::update(float dt)
 	//camera.set_facing(glm::vec2(std::cos(angle), std::sin(angle)));
 
 	//camera.set_origin(glm::vec2(0.0f, 15.0f));
-	update_camera_free(dt);
+	//update_camera_free(dt);
+	update_camera_chase();
 	camera.recalculate_matrices();
 
 	uniform_frame_data.view_matrix = glm::mat3x4(camera.get_view());
@@ -253,6 +254,12 @@ void Car2DMain::update_camera_free(float dt)
 		angle += CAMERA_TURNSPEED * dt;
 	facing = glm::vec2(std::cos(angle), std::sin(angle));
 	camera.set_facing(facing);
+}
+
+void Car2DMain::update_camera_chase()
+{
+	camera.set_origin(car.get_position());
+	camera.set_facing(car.get_facing());
 }
 
 void Car2DMain::render(float dt, float interpolation)

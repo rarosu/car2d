@@ -4,7 +4,7 @@ Window:
     Height: 600
 
 Camera:
-    ZoomLevel: 50.0
+    ZoomLevel: 20.0
     
 Controls:
     Accelerate:
@@ -19,6 +19,8 @@ Controls:
     Right:
         - D
         - Right
+    ParkingBrake:
+        - Space
     GearUp:
         - R
     GearDown:

@@ -19,6 +19,7 @@ public:
 	std::vector<SDL_Scancode> reverse;
 	std::vector<SDL_Scancode> left;
 	std::vector<SDL_Scancode> right;
+	std::vector<SDL_Scancode> ebrake;
 	std::vector<SDL_Scancode> gear_up;
 	std::vector<SDL_Scancode> gear_down;
 	std::vector<SDL_Scancode> toggle_automatic;
