@@ -35,6 +35,6 @@ solution "car2d"
         objdir "build/car2d_main/obj/"
         
         configuration { "Debug" }
-            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmdd" }
+            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmdd", "freetype", "freetype-gl" }
         configuration { "Release" }
-            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmd" }
+            links { "opengl32", "SDL2", "SDL2main", "gl3w", "libyaml-cppmd", "freetype", "freetype-gl" }

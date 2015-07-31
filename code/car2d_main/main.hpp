@@ -9,6 +9,7 @@
 #include "car.hpp"
 #include "road.hpp"
 #include "terrain.hpp"
+#include "stats.hpp"
 
 class WindowContext
 {
@@ -40,6 +41,7 @@ private:
 	Car car;
 	Road road;
 	Terrain terrain;
+	Stats stats;
 	PerFrame uniform_frame_data;
 	GLuint uniform_frame_buffer;
 

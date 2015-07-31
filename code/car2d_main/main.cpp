@@ -93,6 +93,7 @@ WindowContext::WindowContext(const YAML::Node& config, int viewport_width, int v
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glViewport(0, 0, viewport_width, viewport_height);
 	//glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
 
 	{
 		int major;
@@ -120,8 +121,9 @@ Car2DMain::Car2DMain()
 	, running(true)
 	, window_context(config, viewport_width, viewport_height)
 	, ticker(DT, 5)
+	, stats(viewport_width, viewport_height)
 	, camera(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height))
-	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config)
+	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config, stats)
 	, terrain(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 {
@@ -187,6 +189,7 @@ void Car2DMain::handle_events()
 						viewport_height = event.window.data2;
 						glViewport(0, 0, viewport_width, viewport_height);
 						camera.set_projection(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height));
+						stats.window_resized(viewport_width, viewport_height);
 						std::cout << "Window resized to " << viewport_width << "x" << viewport_height << std::endl;
 					} break;
 				}
@@ -211,11 +214,6 @@ void Car2DMain::update(float dt)
 	car.update(dt, input_state_current, input_state_previous);
 
 	// Update the per frame buffer.
-	//static float angle = 0.0f;
-	//angle += dt;
-	//camera.set_facing(glm::vec2(std::cos(angle), std::sin(angle)));
-
-	//camera.set_origin(glm::vec2(0.0f, 15.0f));
 	//update_camera_free(dt);
 	update_camera_chase();
 	camera.recalculate_matrices();
@@ -224,6 +222,9 @@ void Car2DMain::update(float dt)
 	uniform_frame_data.projection_matrix = glm::mat3x4(camera.get_projection());
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerFrame), &uniform_frame_data);
+
+	// Update the statistics.	
+	stats.update_text();
 }
 
 void Car2DMain::update_camera_free(float dt)
@@ -271,6 +272,7 @@ void Car2DMain::render(float dt, float interpolation)
 	terrain.render();
 	road.render();
 	car.render(dt, interpolation);
+	stats.render();
 
 	SDL_GL_SwapWindow(window_context.window);
 }

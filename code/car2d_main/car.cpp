@@ -8,10 +8,11 @@ const float Car::ANGULAR_VELOCITY_TO_RPM = 1.0f / RPM_TO_ANGULAR_VELOCITY;
 const float Car::G = 9.82f;
 const float Car::EPSILON = 10e-5f;
 
-Car::Car(const YAML::Node& car_config, const YAML::Node& config)
+Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	: config(config)
+	, stats(stats)
 	, controls(config)
-	, orientation(45.0f)
+	, orientation(45.0f * DEGREES_TO_RADIANS)
 	, steer_angle(0.0f)
 	, wheel_angular_velocity(0.0f)
 	, facing(std::cos(orientation), std::sin(orientation))
@@ -92,6 +93,8 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config)
 	glGenBuffers(1, &uniform_instance_buffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerInstance), &uniform_instance_data, GL_DYNAMIC_DRAW);
+
+	velocity_local.x = 1;
 }
 
 void Car::update(float dt, const InputState& input_state_current, const InputState& input_state_previous)
@@ -132,15 +135,19 @@ void Car::update_physics(float dt)
 
 	// Calculate the torque exerted on the wheels. Also, integrate the angular velocity of the rear wheels!
 	float wheel_torque = engine_torque * transmission;
-	float wheel_angular_acceleration = wheel_torque / description.wheel_radius;
+	float wheel_angular_acceleration = wheel_torque / description.wheel_inertia;
 	wheel_angular_velocity += wheel_angular_acceleration * dt;
 
 	// Calculate the force exerted on the road surface.
-	float slip_ratio = (velocity_local.x >= EPSILON) ? (wheel_angular_velocity * description.wheel_radius - velocity_local.x) / velocity_local.x : wheel_angular_velocity * description.wheel_radius;
+	//float slip_ratio = (velocity_local.x >= EPSILON) ? (wheel_angular_velocity * description.wheel_radius - velocity_local.x) / velocity_local.x : wheel_angular_velocity * description.wheel_radius;
+	float slip_ratio = (wheel_angular_velocity * description.wheel_radius - velocity_local.x) / (std::abs(velocity_local.x) + 1);
 	float traction_force = lerp_curve(description.slip_curve, slip_ratio) * rear_weight;
 
 	// Above a certain traction, the wheels lose grip and start spinning...
 	traction_force = glm::min(traction_force, rear_weight * description.wheel_friction);
+
+	// Calculate the drag force.
+	glm::vec2 drag_force = 
 
 	// Sum the longitudal and latitudal forces.
 	glm::vec2 force;
@@ -154,13 +161,21 @@ void Car::update_physics(float dt)
 	float sn = std::sin(orientation);
 	float cs = std::cos(orientation);
 
-	acceleration.x = cs * acceleration_local.x + sn * acceleration_local.y;
-	acceleration.y = -sn * acceleration_local.x + cs * acceleration_local.y;
-	velocity.x = cs * velocity_local.x + sn * velocity_local.y;
-	velocity.y = -sn * velocity_local.x + cs * velocity_local.y;
+	acceleration.x = cs * acceleration_local.x - sn * acceleration_local.y;
+	acceleration.y = sn * acceleration_local.x + cs * acceleration_local.y;
+	velocity.x = cs * velocity_local.x - sn * velocity_local.y;
+	velocity.y = sn * velocity_local.x + cs * velocity_local.y;
 
 	// Integrate the position!
 	position += velocity * dt;
+
+	// Update the statistics.
+	stats.append_update_line("position", "Position: (%f, %f)", position.x, position.y);
+	stats.append_update_line("speed", "Speed: %f m/s", glm::length(velocity));
+	stats.append_update_line("acceleration", "Acceleration: %f m/s^2", glm::length(acceleration));
+	stats.append_update_line("slip ratio", "Slip ratio: %f", slip_ratio);
+	stats.append_update_line("front weight", "Front weight: %f kg", front_weight);
+	stats.append_update_line("rear weight", "Rear weight: %f kg", rear_weight);
 }
 
 void Car::render(float dt, float interpolation)
@@ -232,6 +247,16 @@ const glm::vec2& Car::get_position() const
 const glm::vec2& Car::get_facing() const
 {
 	return facing;
+}
+
+const glm::vec2& Car::get_velocity() const
+{
+	return velocity;
+}
+
+const glm::vec2& Car::get_acceleration() const
+{
+	return acceleration;
 }
 
 float Car::lerp_curve(const std::vector<glm::vec2>& curve, float x) const

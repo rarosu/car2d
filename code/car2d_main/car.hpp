@@ -7,17 +7,20 @@
 #include <glm/glm.hpp>
 #include "input.hpp"
 #include "config.hpp"
+#include "stats.hpp"
 
 class Car
 {
 public:
-	Car(const YAML::Node& car_config, const YAML::Node& config);
+	Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats);
 
 	void update(float dt, const InputState& input_state_current, const InputState& input_state_previous);
 	void render(float dt, float interpolation);
 
 	const glm::vec2& get_position() const;
 	const glm::vec2& get_facing() const;
+	const glm::vec2& get_velocity() const;
+	const glm::vec2& get_acceleration() const;
 private:
 	static const float RPM_TO_ANGULAR_VELOCITY;
 	static const float ANGULAR_VELOCITY_TO_RPM;
@@ -25,6 +28,7 @@ private:
 	static const float EPSILON;
 
 	const YAML::Node& config;
+	Stats& stats;
 	Controls controls;
 	
 	struct Static
