@@ -113,9 +113,13 @@ void Stats::update_text()
 	glDeleteBuffers(1, &position_vbo);
 	glDeleteBuffers(1, &texcoord_vbo);
 	glDeleteVertexArrays(1, &vao);
+	vertex_count = 0;
+
+	// Bail out if we do not have any text.
+	if (lines.size() == 0)
+		return;
 
 	// Count the number of vertices.
-	vertex_count = 0;
 	for (int i = 0; i < lines.size(); ++i)
 	{
 		vertex_count += lines[i].text.size() * 6;

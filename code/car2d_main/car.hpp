@@ -8,11 +8,13 @@
 #include "input.hpp"
 #include "config.hpp"
 #include "stats.hpp"
+#include <fstream>
 
 class Car
 {
 public:
 	Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats);
+	~Car();
 
 	void update(float dt, const InputState& input_state_current, const InputState& input_state_previous);
 	void render(float dt, float interpolation);
@@ -43,14 +45,19 @@ private:
 		float cg_to_front;						// The distance from center of gravity to front (m)
 		float cg_to_back;						// The distance from center of gravity to back (m)
 		float cg_height;						// The distance from center of gravity to ground (m)
+		float height;							// The from the ground to the top of the car (m)
 		float halfwidth;						// The half width of the car (m)
 		float cg_to_front_axle;					// The distance from center of gravity to front axle (m)
 		float cg_to_back_axle;					// The distance from center of gravity to back axle (m)
+		float drag_coefficient;					// The C_d coefficient in the drag equation (N/A)
 		float wheel_mass;						// The mass of a single wheel (kg)
 		float wheel_radius;						// The radius of the wheels (m)
 		float wheel_width;						// The width of the wheels (m)
-		float wheel_friction;					// The rolling friction constant of the wheel (N/A)
+		float wheel_max_friction;				// What even is this..? (N/A)
+		float wheel_rolling_friction;			// The rolling friction coefficient of the wheels (N/A)
 		float max_steer_angle;					// The maximum angle the wheels can be at relative to the car (rad)
+
+		float air_density;						// The density of the surrounding air (kg/m^3)
 
 		// Inferred values.
 		float inertia;							// The moment of inertia of the car (kg * m^2)
@@ -78,6 +85,9 @@ private:
 	GLuint quad_position_vbo;
 	GLuint quad_vao;
 	GLuint uniform_instance_buffer;
+
+	int frame_count;
+	std::fstream stat_file;
 
 	Car(const Car&);
 	Car& operator=(const Car&);

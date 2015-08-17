@@ -4,7 +4,7 @@ Window:
     Height: 600
 
 Camera:
-    ZoomLevel: 20.0
+    ZoomLevel: 40.0
     
 Controls:
     Accelerate:
@@ -30,6 +30,7 @@ Controls:
         
 World:
     Gravity: 9.82
+    AirDensity: 1.2754
     
 Assets:
     DefaultCar: test_car.yaml

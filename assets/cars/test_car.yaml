@@ -31,13 +31,16 @@ TransmissionEfficiency: 0.7
 CGToFront: 1.75
 CGToBack: 1.75
 CGHeight: 0.3
+Height: 0.5
 HalfWidth: 0.55
 CGToFrontAxle: 1.25
 CGToBackAxle: 1.25
+DragCoefficient: 0.85
 
 # Wheel and steering attributes.
 WheelMass: 75.0
 WheelRadius: 0.3
 WheelWidth: 0.2
-WheelFriction: 1.5
+WheelMaxFriction: 1.5
+WheelRollingFriction: 30.0
 MaxSteerAngle: 0.4
