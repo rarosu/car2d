@@ -202,7 +202,7 @@ void Car::update_physics(float dt)
 	//wheel_angular_velocity += wheel_angular_acceleration * dt;
 	
 	// Integrate!
-	acceleration_local.x += force.x / description.mass;
+	acceleration_local.x = force.x / description.mass;
 	velocity_local += acceleration_local * dt;
 	
 	// Turn the local quantities into world oriented quantities.
