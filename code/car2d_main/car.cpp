@@ -21,6 +21,7 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	, reverse(false)
 	, ebrake(false)
 	, gear(1)
+	, automatic(true)
 	, frame_count(0)
 	, stat_file("stat.txt", std::ios_base::out | std::ios_base::trunc)
 {
@@ -67,6 +68,8 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	description.gear_ratios[5] = car_config["GearRatios"]["Fifth"].as<float>();
 	description.differential_ratio = car_config["DifferentialRatio"].as<float>();
 	description.transmission_efficiency = car_config["TransmissionEfficiency"].as<float>();
+	description.gear_down_rpm = car_config["GearUpRPM"].as<float>();
+	description.gear_up_rpm = car_config["GearDownRPM"].as<float>();
 
 	description.cg_to_front = car_config["CGToFront"].as<float>();
 	description.cg_to_back = car_config["CGToBack"].as<float>();
@@ -129,9 +132,8 @@ Car::~Car()
 	stat_file.close();
 }
 
-void Car::update(float dt, const InputState& input_state_current, const InputState& input_state_previous)
+void Car::update(float dt)
 {
-	handle_input(input_state_current, input_state_previous);
 	update_physics(dt);
 }
 
@@ -147,7 +149,22 @@ void Car::handle_input(const InputState& input_state_current, const InputState& 
 	float steer_input = (int) controls.is_pressed(controls.left, input_state_current) - (int) controls.is_pressed(controls.right, input_state_current);
 	steer_angle = steer_input * description.max_steer_angle;
 
-	// TODO: Handle gearing.
+	// Handle gearing.
+	if (controls.is_clicked(controls.toggle_automatic, input_state_current, input_state_previous))
+		automatic = !automatic;
+
+	if (!automatic)
+	{
+		if (controls.is_clicked(controls.gear_up, input_state_current, input_state_previous))
+		{
+			gear = glm::clamp(gear + 1, 1, 5);
+		}
+
+		if (controls.is_clicked(controls.gear_down, input_state_current, input_state_previous))
+		{
+			gear = glm::clamp(gear - 1, 1, 5);
+		}
+	}
 }
 
 void Car::update_physics(float dt)
@@ -178,17 +195,31 @@ void Car::update_physics(float dt)
 	float rear_weight = (description.cg_to_front_axle / wheelbase) * weight + (description.cg_height / wheelbase) * description.mass * acceleration_local.x;
 
 	// Assume the wheels are rolling and calculate the engine RPM and the new engine torque from that.
-	//wheel_angular_velocity = velocity_local.x / description.wheel_radius;
-	//float transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
-	//float engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
-	//float engine_torque = throttle ? lerp_curve(description.torque_curve, engine_rpm) : 0.0f;
-	//
-	//// Calculate the torque on the drive axis and use a simplifcation for how much traction is applied.
-	//float drive_torque = engine_torque * transmission;
-	//float traction_force = drive_torque / description.wheel_radius;
+	wheel_angular_velocity = velocity_local.x / description.wheel_radius;
+	float transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
+	float engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
 	
-	// Very simple model of an engine and wheel traction: constant force on the car body.
-	float traction_force = throttle ? 7500 : 0;
+	if (automatic)
+	{
+		if (engine_rpm >= description.gear_up_rpm)
+		{
+			gear = glm::clamp(gear + 1, 1, 5);
+		}
+
+		if (engine_rpm <= description.gear_down_rpm)
+		{
+			gear = glm::clamp(gear - 1, 1, 5);
+		}
+
+		transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
+		engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
+	}
+
+	float engine_torque = throttle ? lerp_curve(description.torque_curve, engine_rpm) : 0.0f;
+	
+	// Calculate the torque on the drive axis and use a simplification for how much traction is applied.
+	float drive_torque = engine_torque * transmission;
+	float traction_force = drive_torque / description.wheel_radius;
 
 	// Calculate the lateral slip angles and determine the lateral cornering force.
 	float front_angular_velocity = car_angular_velocity * description.cg_to_front_axle;
@@ -200,28 +231,29 @@ void Car::update_physics(float dt)
 	float cornering_force_front = front_weight * glm::clamp(-description.cornering_stiffness * slip_angle_front, -description.tire_grip, description.tire_grip);
 	float cornering_force_rear = rear_weight * glm::clamp(-description.cornering_stiffness * slip_angle_rear, -rear_grip, rear_grip);
 
-	// Calculate the torque on the car body.
+	// Calculate the torque on the car body and integrate car yaw rate and orientation.
 	float cornering_torque_front = cornering_force_front * description.cg_to_front_axle;
 	float cornering_torque_rear = cornering_force_rear * description.cg_to_back_axle;
 	float car_torque = std::cos(steer_angle) * cornering_torque_front - cornering_torque_rear;
 
-	// Integrate the car yaw rate and orientation (should this be before or after acceleration and velocity is calculated in world coordinates?).
 	float car_angular_acceleration = car_torque / description.inertia;
 	car_angular_velocity += car_angular_acceleration * dt;
 	orientation += car_angular_velocity * dt;
 
 	// Calculate the wind drag force on the car. Simplification that the area facing the velocity direction is the front.
 	float area = description.height * 2.0f * description.halfwidth;
-	glm::vec2 drag_force = -0.5f * description.air_density * area * description.drag_coefficient * speed * velocity_local;
+	float drag_multiplier = 0.5f * description.air_density * area * description.drag_coefficient;
+	glm::vec2 drag_force = -drag_multiplier * speed * velocity_local;
 
 	// Calculate the rolling friction force on the car.
-	glm::vec2 rolling_friction_force = -description.wheel_rolling_friction * velocity_local;
+	//glm::vec2 rolling_friction_force = -description.wheel_rolling_friction * velocity_local;
+	float rolling_friction_force = -30.0f * drag_multiplier * velocity_local.x;
 
 	// Calculate the braking force on the car.
 
 	// Sum the forces on the car's CG and integrate the velocity.
-	glm::vec2 force = drag_force + rolling_friction_force;
-	force.x += traction_force;
+	glm::vec2 force = drag_force;
+	force.x += traction_force + rolling_friction_force;
 	force.y += std::cos(steer_angle) * cornering_force_front + cornering_force_rear;
 
 	acceleration_local = force / description.mass;
@@ -238,19 +270,36 @@ void Car::update_physics(float dt)
 
 	position += velocity * dt;
 
-	// Update statistics.
+	// Update statistics //
+	
+	// Statistics for debugging steering //
+	//stats.append_update_line("position", "Position (%f, %f)", position.x, position.y);
+	//stats.append_update_line("velocity", "Velocity Local (%f, %f)", velocity_local.x, velocity_local.y);
+	//stats.append_update_line("acceleration", "Acceleration Local (%f, %f)", acceleration_local.x, acceleration_local.y);
+	//stats.append_update_line("steer", "Steer: %f", steer_angle * RADIANS_TO_DEGREES);
+	//stats.append_update_line("yaw rate front", "Yaw Rate Front: %f m/s", front_angular_velocity);
+	//stats.append_update_line("yaw rate rear", "Yaw Rate Rear: %f m/s", rear_angular_velocity);
+	//stats.append_update_line("slip angle front", "Slip Angle Front: %f", slip_angle_front * RADIANS_TO_DEGREES);
+	//stats.append_update_line("slip angle rear", "Slip Angle Rear: %f", slip_angle_rear * RADIANS_TO_DEGREES);
+	//stats.append_update_line("cornering torque front", "Cornering Torque Front: %f Nm", cornering_torque_front);
+	//stats.append_update_line("cornering torque rear", "Cornering Torque Rear: %f Nm", cornering_torque_rear);
+	//stats.append_update_line("cornering force front", "Cornering Force Front: %f N", cornering_force_front);
+	//stats.append_update_line("cornering force rear", "Cornering Force Rear: %f N", cornering_force_rear);
+
+	// Statistics for debugging traction and braking //
 	stats.append_update_line("position", "Position (%f, %f)", position.x, position.y);
-	stats.append_update_line("velocity", "Velocity Local (%f, %f)", velocity_local.x, velocity_local.y);
+	stats.append_update_line("speed", "Speed: %f km/h", glm::length(velocity_local) * 3.6);
+	stats.append_update_line("speedms", "Speed: %f m/s", glm::length(velocity_local));
 	stats.append_update_line("acceleration", "Acceleration Local (%f, %f)", acceleration_local.x, acceleration_local.y);
-	stats.append_update_line("steer", "Steer: %f", steer_angle * RADIANS_TO_DEGREES);
-	stats.append_update_line("yaw rate front", "Yaw Rate Front: %f m/s", front_angular_velocity);
-	stats.append_update_line("yaw rate rear", "Yaw Rate Rear: %f m/s", rear_angular_velocity);
-	stats.append_update_line("slip angle front", "Slip Angle Front: %f", slip_angle_front * RADIANS_TO_DEGREES);
-	stats.append_update_line("slip angle rear", "Slip Angle Rear: %f", slip_angle_rear * RADIANS_TO_DEGREES);
-	stats.append_update_line("cornering torque front", "Cornering Torque Front: %f Nm", cornering_torque_front);
-	stats.append_update_line("cornering torque rear", "Cornering Torque Rear: %f Nm", cornering_torque_rear);
-	stats.append_update_line("cornering force front", "Cornering Force Front: %f N", cornering_force_front);
-	stats.append_update_line("cornering force rear", "Cornering Force Rear: %f N", cornering_force_rear);
+	stats.append_update_line("rpm", "Engine RPM: %f rev/min", engine_rpm);
+	stats.append_update_line("gear", "Current gear: %d", gear);
+	stats.append_update_line("automatic", "Automatic: %d", automatic);
+	stats.append_update_line("engine torque", "Engine torque: %f Nm", engine_torque);
+	stats.append_update_line("drive torque", "Drive torque: %f Nm", drive_torque);
+	stats.append_update_line("traction force", "Traction force: %f N", traction_force);
+	stats.append_update_line("drag force", "Drag force: %f N", glm::length(drag_force));
+	stats.append_update_line("rolling friction", "Rolling friction: %f N", glm::abs(rolling_friction_force));
+	stats.append_update_line("speed squared", "Speed squared: %f m^2/s^2", speed * speed);
 }
 
 void Car::render(float dt, float interpolation)

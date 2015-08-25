@@ -220,6 +220,8 @@ void Car2DMain::handle_events()
 			} break;
 		}
 	}
+
+	car.handle_input(input_state_current, input_state_previous);
 }
 
 void Car2DMain::update(float dt)
@@ -228,7 +230,7 @@ void Car2DMain::update(float dt)
 		running = false;
 
 	// Update the car.
-	car.update(dt, input_state_current, input_state_previous);
+	car.update(dt);
 
 	// Update the per frame buffer.
 	//update_camera_free(dt);

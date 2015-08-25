@@ -16,7 +16,8 @@ public:
 	Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats);
 	~Car();
 
-	void update(float dt, const InputState& input_state_current, const InputState& input_state_previous);
+	void handle_input(const InputState& input_state_current, const InputState& input_state_previous);
+	void update(float dt);
 	void render(float dt, float interpolation);
 
 	const glm::vec2& get_position() const;
@@ -45,6 +46,8 @@ private:
 		std::vector<float> gear_ratios;				// The transmission ratios for the gears (0 is reverse) (N/A)
 		float differential_ratio;					// The transmission ratio for the differential (N/A)
 		float transmission_efficiency;				// The percentage of remaining energy after transmission (N/A)
+		float gear_down_rpm;						// RPM at which the automatic will gear down.
+		float gear_up_rpm;							// RPM at which the automatic will gear up.
 		float cg_to_front;							// The distance from center of gravity to front (m)
 		float cg_to_back;							// The distance from center of gravity to back (m)
 		float cg_height;							// The distance from center of gravity to ground (m)
@@ -81,6 +84,7 @@ private:
 	bool reverse;								// Whether the reverse/brake is active or not.
 	bool ebrake;								// Whether the parking brake is active or not.
 	int gear;									// The index of the current gear in interval [0, 5]
+	bool automatic;								// Whether the gearing should be handled automatically or manually.
 
 	PerInstance uniform_instance_data;
 	GLuint mesh_vs;
@@ -96,7 +100,6 @@ private:
 	Car(const Car&);
 	Car& operator=(const Car&);
 
-	void handle_input(const InputState& input_state_current, const InputState& input_state_previous);
 	void update_physics(float dt);
 	float lerp_curve(const std::vector<glm::vec2>& curve, float x) const;
 };
