@@ -30,6 +30,9 @@ public:
 	void start();
 private:
 	YAML::Node config;
+	float zoom_level;
+	float max_zoom_level;
+	float min_zoom_level;
 	int viewport_width;
 	int viewport_height;
 	bool running;

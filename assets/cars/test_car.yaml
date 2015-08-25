@@ -7,12 +7,21 @@ TorqueCurve:
     - [4600, 310]
     - [7000, 230]
 
-# The wheel slip curve.
+# The longitudal wheel slip curve. Determines the amount of traction given for a given longitudal slip.
 SlipCurve:
     - [-1.0, -0.4]
     - [-0.05, -1.2]
     - [0.05, 1.2]
     - [1.0, 0.4]
+
+# Determines the amount of latitudal force given for a given wheel angle compared to velocity.
+CorneringStiffness: 10.0
+
+# The maximum multiplier for the latitudal force.
+TireGrip: 2.0
+
+# The factor multiplied by the maximum rear grip when the handbrake is in.
+LockGripFactor: 0.3
 
 # The transmission ratios for the gears and the differential.
 GearRatios:
@@ -42,5 +51,5 @@ WheelMass: 75.0
 WheelRadius: 0.3
 WheelWidth: 0.2
 WheelMaxFriction: 1.5
-WheelRollingFriction: 30.0
-MaxSteerAngle: 0.4
+WheelRollingFriction: 100.0
+MaxSteerAngle: 5
