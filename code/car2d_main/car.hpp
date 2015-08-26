@@ -8,7 +8,7 @@
 #include "input.hpp"
 #include "config.hpp"
 #include "stats.hpp"
-#include <fstream>
+#include "statfile.hpp"
 
 class Car
 {
@@ -94,8 +94,7 @@ private:
 	GLuint quad_vao;
 	GLuint uniform_instance_buffer;
 
-	int frame_count;
-	std::fstream stat_file;
+	StatFile stat_file;
 
 	Car(const Car&);
 	Car& operator=(const Car&);
