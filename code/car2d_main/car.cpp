@@ -211,7 +211,9 @@ void Car::update_physics(float dt)
 
 	// Calculate the force exerted on the road surface.	
 	float slip_ratio = velocity_local.x < 0.01 ? 0 : (wheel_angular_velocity * description.wheel_radius - velocity_local.x) / std::abs(velocity_local.x);
-	float traction_force = lerp_curve(description.slip_curve, slip_ratio) * rear_weight;
+	//float traction_force = lerp_curve(description.slip_curve, slip_ratio) * rear_weight;
+	float traction_force = glm::clamp(8.0f * slip_ratio, -1.0f, 1.0f) * rear_weight;
+
 
 	// Calculate the lateral slip angles and determine the lateral cornering force.
 	float front_angular_velocity = car_angular_velocity * description.cg_to_front_axle;
@@ -252,8 +254,8 @@ void Car::update_physics(float dt)
 	glm::vec2 drag_force = -drag_multiplier * speed * velocity_local;
 
 	// Calculate the rolling friction force on the car.
-	//glm::vec2 rolling_friction_force = -description.wheel_rolling_friction * velocity_local;
-	float rolling_friction_force = -30.0f * drag_multiplier * velocity_local.x;
+	float rolling_friction_force = -description.wheel_rolling_friction * velocity_local.x;
+	//float rolling_friction_force = -30.0f * drag_multiplier * velocity_local.x;
 
 	// Calculate the opposing torque on the wheels. Includes braking.
 	float braking_torque = reverse ? -3000 : 0;

@@ -9,10 +9,15 @@ TorqueCurve:
     - [8000, 10]
 
 # The longitudal wheel slip curve. Determines the amount of traction given for a given longitudal slip.
+#SlipCurve:
+#    - [-1.0, -0.4]
+#    - [-0.05, -1.2]
+#    - [0.05, 1.2]
+#    - [1.0, 0.4]
 SlipCurve:
     - [-1.0, -0.4]
-    - [-0.05, -1.2]
-    - [0.05, 1.2]
+    - [-0.15, -1.2]
+    - [0.15, 1.2]
     - [1.0, 0.4]
 
 # Determines the amount of latitudal force given for a given wheel angle compared to velocity.
@@ -39,7 +44,7 @@ TransmissionEfficiency: 0.7
 
 # Values for the automatic gearing.
 GearDownRPM: 1500
-GearUpRPM: 4000
+GearUpRPM: 3500
 
 # The geometry of the car from center of gravity (CG) to various parts.
 CGToFront: 1.75
@@ -56,5 +61,6 @@ WheelMass: 75.0
 WheelRadius: 0.3
 WheelWidth: 0.2
 WheelMaxFriction: 1.5
-WheelRollingFriction: 24.0
+#WheelRollingFriction: 24.0
+WheelRollingFriction: 100.0
 MaxSteerAngle: 5
