@@ -8,27 +8,6 @@ TorqueCurve:
     - [7000, 120]
     - [8000, 10]
 
-# The longitudal wheel slip curve. Determines the amount of traction given for a given longitudal slip.
-#SlipCurve:
-#    - [-1.0, -0.4]
-#    - [-0.05, -1.2]
-#    - [0.05, 1.2]
-#    - [1.0, 0.4]
-SlipCurve:
-    - [-1.0, -0.4]
-    - [-0.15, -1.2]
-    - [0.15, 1.2]
-    - [1.0, 0.4]
-
-# Determines the amount of latitudal force given for a given wheel angle compared to velocity.
-CorneringStiffness: 10.0
-
-# The maximum multiplier for the latitudal force.
-TireGrip: 2.0
-
-# The factor multiplied by the maximum rear grip when the handbrake is in.
-LockGripFactor: 0.3
-
 # The transmission ratios for the gears and the differential.
 GearRatios:
     Reverse: 2.90
@@ -46,6 +25,10 @@ TransmissionEfficiency: 0.7
 GearDownRPM: 1500
 GearUpRPM: 3500
 
+# Values for braking.
+BrakeTorque: 2000
+HandBrakeTorque: 1500
+
 # The geometry of the car from center of gravity (CG) to various parts.
 CGToFront: 1.75
 CGToBack: 1.75
@@ -60,7 +43,17 @@ DragCoefficient: 0.85
 WheelMass: 75.0
 WheelRadius: 0.3
 WheelWidth: 0.2
-WheelMaxFriction: 1.5
-#WheelRollingFriction: 24.0
-WheelRollingFriction: 100.0
+WheelRollingFriction: 8.31
 MaxSteerAngle: 5
+
+# The lateral force multiplier given for a certain slip angle.
+CorneringStiffness: 10.0
+
+# The amount of traction a tire can handle before losing grip (static friction). This also determines the radius of the circle of traction.
+WheelAdhesiveLimit: 1.2
+
+# The radius of the circle of traction when the car is sliding (should always be less than the adhesive limit).
+WheelSlipFriction: 0.5
+
+# The additional multiplier of the slip friction/adhesive limit when the wheels are locked by the handbrake.
+LockGripFactor: 0.3

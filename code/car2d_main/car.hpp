@@ -14,7 +14,6 @@ class Car
 {
 public:
 	Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats);
-	~Car();
 
 	void handle_input(const InputState& input_state_current, const InputState& input_state_previous);
 	void update(float dt);
@@ -39,15 +38,16 @@ private:
 		// Configuration values.
 		float mass;									// The mass of the car (kg)
 		std::vector<glm::vec2> torque_curve;		// The torque curve of the engine (rpm -> N*m)
-		std::vector<glm::vec2> slip_curve;			// The slip curve of the wheels (N/A -> N/A)
-		float cornering_stiffness;					// The cornering stiffness of the wheels (N/A)
+		
 		float tire_grip;							// The maximum amount of grip of the wheels (N/A)
-		float lock_grip_factor;						// Rear wheel grip factor (N/A)
+		
 		std::vector<float> gear_ratios;				// The transmission ratios for the gears (0 is reverse) (N/A)
 		float differential_ratio;					// The transmission ratio for the differential (N/A)
 		float transmission_efficiency;				// The percentage of remaining energy after transmission (N/A)
 		float gear_down_rpm;						// RPM at which the automatic will gear down.
 		float gear_up_rpm;							// RPM at which the automatic will gear up.
+		float brake_torque;							// The torque applied when braking (N*m)
+		float hand_brake_torque;					// The torque applied when locking the tires using the handbrake (N*m)
 		float cg_to_front;							// The distance from center of gravity to front (m)
 		float cg_to_back;							// The distance from center of gravity to back (m)
 		float cg_height;							// The distance from center of gravity to ground (m)
@@ -59,9 +59,12 @@ private:
 		float wheel_mass;							// The mass of a single wheel (kg)
 		float wheel_radius;							// The radius of the wheels (m)
 		float wheel_width;							// The width of the wheels (m)
-		float wheel_max_friction;					// What even is this..? (N/A)
 		float wheel_rolling_friction;				// The rolling friction coefficient of the wheels (N/A)
 		float max_steer_angle;						// The maximum angle the wheels can be at relative to the car (rad)
+		float cornering_stiffness;					// The cornering stiffness of the wheels (N/A)
+		float wheel_adhesive_limit;					// The friction limit until the wheels slide (N/A).
+		float wheel_slip_friction;					// The friction when the wheels are sliding (N/A).
+		float lock_grip_factor;						// Multiplied with the amount of grip on the rear wheels when the wheels are locked (N/A)
 
 		float air_density;							// The density of the surrounding air (kg/m^3)
 
@@ -73,7 +76,6 @@ private:
 	float orientation;							// The orientation of the car relative to world orientation (rad)
 	float car_angular_velocity;					// The current rate of turn for the car (change in yaw) (rad/s)
 	float steer_angle;							// The orientation of the front wheels relative to car orientation (rad)
-	float wheel_angular_velocity;				// The rear wheel angular velocity (rad/s)
 	glm::vec2 position;							// The position of the car relative to world origin (m)
 	glm::vec2 velocity;							// The velocity of the car relative to world orientation (m/s)
 	glm::vec2 acceleration;						// The acceleration of the car relative to world orientation (m/s^2)
@@ -85,6 +87,10 @@ private:
 	bool ebrake;								// Whether the parking brake is active or not.
 	int gear;									// The index of the current gear in interval [0, 5]
 	bool automatic;								// Whether the gearing should be handled automatically or manually.
+	bool front_slipping;						// Whether the front is slipping.
+	bool rear_slipping;							// Whether the rear is slipping.
+	float maximum_power_omega;					// The angular velocity of the engine at which the maximum power can be attained (RPM).
+	float maximum_power;						// The maximum power that can be outputted by the engine (W).
 
 	PerInstance uniform_instance_data;
 	GLuint mesh_vs;
@@ -93,8 +99,6 @@ private:
 	GLuint quad_position_vbo;
 	GLuint quad_vao;
 	GLuint uniform_instance_buffer;
-
-	StatFile stat_file;
 
 	Car(const Car&);
 	Car& operator=(const Car&);
