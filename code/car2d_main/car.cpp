@@ -194,6 +194,23 @@ void Car::update_physics(float dt)
 	float wheel_angular_velocity = velocity_local.x / description.wheel_radius;
 	float transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
 	float engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
+
+	if (automatic)
+	{
+		if (engine_rpm >= description.gear_up_rpm)
+		{
+			gear = glm::clamp(gear + 1, 1, 5);
+		}
+
+		if (engine_rpm < description.gear_down_rpm)
+		{
+			gear = glm::clamp(gear - 1, 1, 5);
+		}
+
+		transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
+		engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
+	}
+
 	float engine_torque = throttle ? lerp_curve(description.torque_curve, engine_rpm) : 0.0f;
 
 	// Simplified traction model - use the torque on the wheels.
