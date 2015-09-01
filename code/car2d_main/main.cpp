@@ -279,7 +279,6 @@ void Car2DMain::update_camera_free(float dt)
 void Car2DMain::update_camera_chase()
 {
 	camera.set_origin(car.get_position());
-	camera.set_facing(car.get_facing());
 }
 
 void Car2DMain::render(float dt, float interpolation)

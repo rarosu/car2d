@@ -12,7 +12,7 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	: config(config)
 	, stats(stats)
 	, controls(config)
-	, orientation(0.0f * DEGREES_TO_RADIANS)
+	, orientation(90.0f * DEGREES_TO_RADIANS)
 	, car_angular_velocity(0.0f)
 	, steer_angle(0.0f)
 	, facing(std::cos(orientation), std::sin(orientation))
@@ -274,6 +274,7 @@ void Car::update_physics(float dt)
 	float car_angular_acceleration = car_torque / description.inertia;
 	car_angular_velocity += car_angular_acceleration * dt;
 	orientation += car_angular_velocity * dt;
+	facing = glm::vec2(std::cos(orientation), std::sin(orientation));
 
 	// Calculate the wind drag force on the car. Simplification that the area facing the velocity direction is the front.
 	float area = description.height * 2.0f * description.halfwidth;
