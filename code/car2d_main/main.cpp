@@ -116,13 +116,16 @@ WindowContext::~WindowContext()
 
 Car2DMain::Car2DMain()
 	: config(YAML::LoadFile(PROJECT_ROOT + FILE_CONFIG))
+	, zoom_level(config["Camera"]["ZoomLevel"].as<float>())
+	, max_zoom_level(config["Camera"]["MaxZoomLevel"].as<float>())
+	, min_zoom_level(config["Camera"]["MinZoomLevel"].as<float>())
 	, viewport_width(config["Window"]["Width"].as<int>())
 	, viewport_height(config["Window"]["Height"].as<int>())
 	, running(true)
 	, window_context(config, viewport_width, viewport_height)
 	, ticker(DT, 5)
 	, stats(viewport_width, viewport_height)
-	, camera(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height))
+	, camera(Camera::create_projection(2.0f / zoom_level, viewport_width, viewport_height))
 	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config, stats)
 	, terrain(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
@@ -188,7 +191,7 @@ void Car2DMain::handle_events()
 						viewport_width = event.window.data1;
 						viewport_height = event.window.data2;
 						glViewport(0, 0, viewport_width, viewport_height);
-						camera.set_projection(Camera::create_projection(2.0f / config["Camera"]["ZoomLevel"].as<float>(), viewport_width, viewport_height));
+						camera.set_projection(Camera::create_projection(2.0f / zoom_level, viewport_width, viewport_height));
 						stats.window_resized(viewport_width, viewport_height);
 						std::cout << "Window resized to " << viewport_width << "x" << viewport_height << std::endl;
 					} break;
@@ -204,14 +207,30 @@ void Car2DMain::handle_events()
 			{
 				input_state_current.keys[event.key.keysym.scancode] = false;
 			} break;
+
+			case SDL_MOUSEWHEEL:
+			{
+				zoom_level -= event.wheel.y;
+				if (zoom_level > max_zoom_level)
+					zoom_level = max_zoom_level;
+				if (zoom_level < min_zoom_level)
+					zoom_level = min_zoom_level;
+
+				camera.set_projection(Camera::create_projection(2.0f / zoom_level, viewport_width, viewport_height));
+			} break;
 		}
 	}
+
+	car.handle_input(input_state_current, input_state_previous);
 }
 
 void Car2DMain::update(float dt)
 {
+	if (input_state_current.keys[SDL_SCANCODE_ESCAPE])
+		running = false;
+
 	// Update the car.
-	car.update(dt, input_state_current, input_state_previous);
+	car.update(dt);
 
 	// Update the per frame buffer.
 	//update_camera_free(dt);
@@ -260,7 +279,6 @@ void Car2DMain::update_camera_free(float dt)
 void Car2DMain::update_camera_chase()
 {
 	camera.set_origin(car.get_position());
-	camera.set_facing(car.get_facing());
 }
 
 void Car2DMain::render(float dt, float interpolation)

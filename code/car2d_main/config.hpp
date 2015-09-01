@@ -6,7 +6,7 @@
 const float RADIANS_TO_DEGREES = 57.2957795130;
 const float DEGREES_TO_RADIANS = 0.017453292519;
 
-const float DT = 1.0f / 100.0f;
+const float DT = 1.0f / 200.0f;
 const int OPENGL_VERSION_MAJOR = 4;
 const int OPENGL_VERSION_MINOR = 4;
 const std::string PROJECT_ROOT = "../../../";

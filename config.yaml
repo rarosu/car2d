@@ -5,6 +5,8 @@ Window:
 
 Camera:
     ZoomLevel: 40.0
+    MaxZoomLevel: 150.0
+    MinZoomLevel: 10.0
     
 Controls:
     Accelerate:
@@ -19,7 +21,7 @@ Controls:
     Right:
         - D
         - Right
-    ParkingBrake:
+    HandBrake:
         - Space
     GearUp:
         - R

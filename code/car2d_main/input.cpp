@@ -59,7 +59,7 @@ Controls::Controls(const YAML::Node& config)
 	load_controls(reverse, config["Controls"]["Reverse"], mapping);
 	load_controls(left, config["Controls"]["Left"], mapping);
 	load_controls(right, config["Controls"]["Right"], mapping);
-	load_controls(ebrake, config["Controls"]["ParkingBrake"], mapping);
+	load_controls(ebrake, config["Controls"]["HandBrake"], mapping);
 	load_controls(gear_up, config["Controls"]["GearUp"], mapping);
 	load_controls(gear_down, config["Controls"]["GearDown"], mapping);
 	load_controls(toggle_automatic, config["Controls"]["ToggleAutomatic"], mapping);

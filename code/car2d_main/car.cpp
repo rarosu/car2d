@@ -12,32 +12,20 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	: config(config)
 	, stats(stats)
 	, controls(config)
-	, orientation(0.0f * DEGREES_TO_RADIANS)
+	, orientation(90.0f * DEGREES_TO_RADIANS)
+	, car_angular_velocity(0.0f)
 	, steer_angle(0.0f)
-	, wheel_angular_velocity(0.0f)
 	, facing(std::cos(orientation), std::sin(orientation))
 	, throttle(false)
 	, reverse(false)
 	, ebrake(false)
 	, gear(1)
-	, frame_count(0)
-	, stat_file("stat.txt", std::ios_base::out | std::ios_base::trunc)
+	, automatic(false)
+	, front_slipping(false)
+	, rear_slipping(false)
+	, maximum_power_omega(0)
+	, maximum_power(0)
 {
-	//throttle = true;
-	stat_file << "throttle" << ";" 
-		<< "engine_rpm" << ";" 
-		<< "engine_torque" << ";" 
-		<< "drive_torque" << ";" 
-		<< "drive_angular_acceleration" << ";" 
-		<< "drive_angular_velocity" << ";"
-	    << "slip_ratio" << ";" 
-		<< "traction_force" << ";"
-		<< "wheel_torque" << ";" 
-		<< "wheel_angular_acceleration" << ";" 
-		<< "wheel_angular_velocity" << ";" 
-		<< "acceleration_local.x" << ";" 
-		<< "velocity_local.x" << std::endl;
-
 	// Read all configuration values.
 	description.mass = car_config["Mass"].as<float>();
 
@@ -45,12 +33,6 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	for (int i = 0; i < car_config["TorqueCurve"].size(); ++i)
 	{
 		description.torque_curve[i] = glm::vec2(car_config["TorqueCurve"][i][0].as<float>(), car_config["TorqueCurve"][i][1].as<float>());
-	}
-
-	description.slip_curve.resize(car_config["SlipCurve"].size());
-	for (int i = 0; i < car_config["SlipCurve"].size(); ++i)
-	{
-		description.slip_curve[i] = glm::vec2(car_config["SlipCurve"][i][0].as<float>(), car_config["SlipCurve"][i][1].as<float>());
 	}
 
 	description.gear_ratios.resize(6);
@@ -62,6 +44,11 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	description.gear_ratios[5] = car_config["GearRatios"]["Fifth"].as<float>();
 	description.differential_ratio = car_config["DifferentialRatio"].as<float>();
 	description.transmission_efficiency = car_config["TransmissionEfficiency"].as<float>();
+	description.gear_down_rpm = car_config["GearUpRPM"].as<float>();
+	description.gear_up_rpm = car_config["GearDownRPM"].as<float>();
+
+	description.brake_torque = car_config["BrakeTorque"].as<float>();
+	description.hand_brake_torque = car_config["HandBrakeTorque"].as<float>();
 
 	description.cg_to_front = car_config["CGToFront"].as<float>();
 	description.cg_to_back = car_config["CGToBack"].as<float>();
@@ -75,9 +62,12 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	description.wheel_mass = car_config["WheelMass"].as<float>();
 	description.wheel_radius = car_config["WheelRadius"].as<float>();
 	description.wheel_width = car_config["WheelWidth"].as<float>();
-	description.wheel_max_friction = car_config["WheelMaxFriction"].as<float>();
 	description.wheel_rolling_friction = car_config["WheelRollingFriction"].as<float>();
-	description.max_steer_angle = car_config["MaxSteerAngle"].as<float>();
+	description.max_steer_angle = car_config["MaxSteerAngle"].as<float>() * DEGREES_TO_RADIANS;
+	description.cornering_stiffness = car_config["CorneringStiffness"].as<float>();
+	description.wheel_adhesive_limit = car_config["WheelAdhesiveLimit"].as<float>();
+	description.wheel_slip_friction = car_config["WheelSlipFriction"].as<float>();
+	description.lock_grip_factor = car_config["LockGripFactor"].as<float>();
 
 	description.air_density = config["World"]["AirDensity"].as<float>();
 
@@ -115,23 +105,55 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	glGenBuffers(1, &uniform_instance_buffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerInstance), &uniform_instance_data, GL_DYNAMIC_DRAW);
+	
+	// Calculate the maximum power output from the engine by maximizing the function Power = Torque * Angular Velocity.
+	maximum_power = -10000;
+
+	float power;
+	for (int i = 0; i < description.torque_curve.size() - 1; i++)
+	{
+		float omegas[] = { description.torque_curve[i].x * RPM_TO_ANGULAR_VELOCITY, description.torque_curve[i + 1].x * RPM_TO_ANGULAR_VELOCITY };
+		
+		// Maximum power can either be at the edge points...
+		power = omegas[0] * description.torque_curve[i].y;
+		if (power > maximum_power)
+		{
+			maximum_power = power;
+			maximum_power_omega = omegas[0];
+		}
+
+		// Or at stationary points on the curve.
+		float k = (description.torque_curve[i + 1].y - description.torque_curve[i].y) / (omegas[1] - omegas[0]);
+		float stationary_omega = (k * omegas[0] - description.torque_curve[i].y) / (2.0f * k);
+		if (stationary_omega >= omegas[0] && stationary_omega <= omegas[1])
+		{
+			float t = stationary_omega / (omegas[1] - omegas[0]);
+			power = (k * stationary_omega + description.torque_curve[i].y) * stationary_omega;
+			if (power > maximum_power)
+			{
+				maximum_power = power;
+				maximum_power_omega = stationary_omega;
+			}
+		}
+		
+	}
+
+	power = description.torque_curve.back().x * RPM_TO_ANGULAR_VELOCITY * description.torque_curve.back().y;
+	if (power > maximum_power)
+	{
+		maximum_power = power;
+		maximum_power_omega = description.torque_curve.back().x * RPM_TO_ANGULAR_VELOCITY;
+	}
 }
 
-Car::~Car()
+void Car::update(float dt)
 {
-	stat_file.close();
-}
-
-void Car::update(float dt, const InputState& input_state_current, const InputState& input_state_previous)
-{
-	handle_input(input_state_current, input_state_previous);
 	update_physics(dt);
 }
 
 void Car::handle_input(const InputState& input_state_current, const InputState& input_state_previous)
 {
 	// Handle throttle/braking
-	//throttle = true;
 	throttle = controls.is_pressed(controls.accelerate, input_state_current);
 	reverse = controls.is_pressed(controls.reverse, input_state_current);
 	ebrake = controls.is_pressed(controls.ebrake, input_state_current);
@@ -140,72 +162,135 @@ void Car::handle_input(const InputState& input_state_current, const InputState& 
 	float steer_input = (int) controls.is_pressed(controls.left, input_state_current) - (int) controls.is_pressed(controls.right, input_state_current);
 	steer_angle = steer_input * description.max_steer_angle;
 
-	// TODO: Handle gearing.
+	// Handle gearing.
+	if (controls.is_clicked(controls.toggle_automatic, input_state_current, input_state_previous))
+		automatic = !automatic;
+
+	if (!automatic)
+	{
+		if (controls.is_clicked(controls.gear_up, input_state_current, input_state_previous))
+		{
+			gear = glm::clamp(gear + 1, 1, 5);
+		}
+
+		if (controls.is_clicked(controls.gear_down, input_state_current, input_state_previous))
+		{
+			gear = glm::clamp(gear - 1, 1, 5);
+		}
+	}
 }
 
 void Car::update_physics(float dt)
 {
-	// Calculate the weight transfer with the current acceleration.
+	float speed = glm::length(velocity_local);
+
+	// Calculate weight distribution.
 	float weight = description.mass * G;
 	float wheelbase = description.cg_to_front_axle + description.cg_to_back_axle;
 	float front_weight = (description.cg_to_back_axle / wheelbase) * weight - (description.cg_height / wheelbase) * description.mass * acceleration_local.x;
 	float rear_weight = (description.cg_to_front_axle / wheelbase) * weight + (description.cg_height / wheelbase) * description.mass * acceleration_local.x;
 	
-	// For testing, half weight front, half weight back.
-	//float weight = description.mass * G;
-	//float front_weight = weight * 0.5f;
-	//float rear_weight = weight * 0.5f;
-
-	// Given the angular speed of the rear wheels, calculate engine speed and use that to look up maximum torque.
-	// When the car is standing still, the engine is assumed to give the torque for the minimum defined speed value.
-	// This is a simplification to avoid simulating a clutch.
+	// Assume the wheels are rolling and calculate the engine torque.
+	float wheel_angular_velocity = velocity_local.x / description.wheel_radius;
 	float transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
 	float engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
+
+	if (automatic)
+	{
+		if (engine_rpm >= description.gear_up_rpm)
+		{
+			gear = glm::clamp(gear + 1, 1, 5);
+		}
+
+		if (engine_rpm < description.gear_down_rpm)
+		{
+			gear = glm::clamp(gear - 1, 1, 5);
+		}
+
+		transmission = description.gear_ratios[gear] * description.differential_ratio * description.transmission_efficiency;
+		engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
+	}
+
 	float engine_torque = throttle ? lerp_curve(description.torque_curve, engine_rpm) : 0.0f;
-	
-	// Calculate the torque exerted on the wheels. Also, integrate the angular velocity of the rear wheels!
+
+	// Simplified traction model - use the torque on the wheels.
+	// In a more precise implementation, the angular velocity of the wheels should be integrated and 
+	// a slip ratio calculated that can be used as a basis for forward traction. This is a simpler model however.
 	float drive_torque = engine_torque * transmission;
-	float drive_angular_acceleration = drive_torque / description.wheel_inertia;
-	wheel_angular_velocity += drive_angular_acceleration * dt;
-	float drive_angular_velocity = wheel_angular_velocity;
+	float traction_force = drive_torque / description.wheel_radius;
+
+	// Calculate the braking torque on the wheels.
+	float braking_torque = glm::min(reverse * description.brake_torque + ebrake * description.hand_brake_torque, description.brake_torque);
+	float braking_force = -braking_torque / description.wheel_radius * glm::sign(velocity_local.x);
+
+	// Calculate the lateral slip angles and determine the lateral cornering force.
+	float front_angular_velocity = car_angular_velocity * description.cg_to_front_axle;
+	float rear_angular_velocity = -car_angular_velocity * description.cg_to_back_axle;
 	
-	// Calculate the force exerted on the road surface.
-	float slip_ratio = (wheel_angular_velocity * description.wheel_radius - velocity_local.x) / (std::abs(velocity_local.x) + 1);
-	float traction_force = lerp_curve(description.slip_curve, slip_ratio) * rear_weight;
-
-	// Calculate the rolling friction.
-	float rolling_friction_force = description.wheel_rolling_friction * velocity_local.x;
-
-	// Calculate the opposing torque on the wheels.
-	float wheel_force = -traction_force - rolling_friction_force;
-	float wheel_torque = wheel_force * description.wheel_radius;
-	float wheel_angular_acceleration = wheel_torque / description.wheel_inertia;
-	wheel_angular_velocity += wheel_angular_acceleration * dt;
-
-	// Calculate the drag force.
-	float speed = glm::length(velocity_local);
-	float frontal_area = 2.0f * description.halfwidth * description.height;
-	glm::vec2 drag_force = -0.5f * description.air_density * description.drag_coefficient * frontal_area * speed * velocity_local;
-	//glm::vec2 drag_force;
-
-	// Sum the longitudal and latitudal forces.
-
-	glm::vec2 force;
-	force.x = traction_force + drag_force.x;
-	force.y = drag_force.y;
+	float slip_angle_front = std::atan2(velocity_local.y + front_angular_velocity, std::abs(velocity_local.x)) - glm::sign(velocity_local.x) * steer_angle;
+	float slip_angle_rear  = std::atan2(velocity_local.y + rear_angular_velocity,  std::abs(velocity_local.x));
 	
-	// Calculate the opposing torque on the wheels.
-	//float traction_torque = -traction_force * description.wheel_radius;
-	//float drag_torque = -drag_force.x * description.wheel_radius;
-	//float wheel_torque = traction_torque + drag_torque;
-	//float wheel_angular_acceleration = wheel_torque / description.wheel_inertia;
-	//wheel_angular_velocity += wheel_angular_acceleration * dt;
+	float cornering_force_front = front_weight * -description.cornering_stiffness * slip_angle_front;
+	float cornering_force_rear = rear_weight * -description.cornering_stiffness * slip_angle_rear;
+
+	// The wheels have a limited maximal traction before they start to slide.
+	float front_traction_circle_radius = front_slipping ? description.wheel_slip_friction : description.wheel_adhesive_limit;
+	float rear_traction_circle_radius = rear_slipping ? description.wheel_slip_friction : description.wheel_adhesive_limit;
+
+	rear_traction_circle_radius *= 1.0f - ebrake * (1.0f - description.lock_grip_factor);
 	
-	// Integrate!
-	acceleration_local.x = force.x / description.mass;
+	glm::vec2 front_total_traction = glm::vec2(0, cornering_force_front * std::cos(steer_angle));
+	glm::vec2 rear_total_traction = glm::vec2(traction_force + braking_force, cornering_force_rear);
+
+	float front_total_traction_length = glm::length(front_total_traction);
+	if (front_total_traction_length / front_weight >= front_traction_circle_radius)
+	{
+		front_total_traction /= front_total_traction_length;
+		front_total_traction *= front_traction_circle_radius * front_weight;
+		front_slipping = true;
+	}
+	else
+	{
+		front_slipping = false;
+	}
+
+	float rear_total_traction_length = glm::length(rear_total_traction);
+	if (rear_total_traction_length / rear_weight >= rear_traction_circle_radius)
+	{
+		rear_total_traction /= rear_total_traction_length;
+		rear_total_traction *= rear_traction_circle_radius * rear_weight;
+		rear_slipping = true;
+	}
+	else
+	{
+		rear_slipping = false;
+	}
+
+	// Calculate the torque on the car body and integrate car yaw rate and orientation.
+	float cornering_torque_front = front_total_traction.y * description.cg_to_front_axle;
+	float cornering_torque_rear = rear_total_traction.y * description.cg_to_back_axle;
+	float car_torque = std::cos(steer_angle) * cornering_torque_front - cornering_torque_rear;
+	
+	float car_angular_acceleration = car_torque / description.inertia;
+	car_angular_velocity += car_angular_acceleration * dt;
+	orientation += car_angular_velocity * dt;
+	facing = glm::vec2(std::cos(orientation), std::sin(orientation));
+
+	// Calculate the wind drag force on the car. Simplification that the area facing the velocity direction is the front.
+	float area = description.height * 2.0f * description.halfwidth;
+	float drag_multiplier = 0.5f * description.air_density * area * description.drag_coefficient;
+	glm::vec2 drag_resistance = -drag_multiplier * speed * velocity_local;
+	
+	// Calculate the rolling friction force on the car.
+	glm::vec2 rolling_resistance = glm::vec2(-description.wheel_rolling_friction * velocity_local.x, 0);
+
+	// Sum the forces on the car's CG and integrate the velocity.
+	glm::vec2 force = rear_total_traction + front_total_traction + drag_resistance + rolling_resistance;
+	
+	acceleration_local = force / description.mass;
 	velocity_local += acceleration_local * dt;
 	
-	// Turn the local quantities into world oriented quantities.
+	// Calculate the acceleration and velocity in world coordinates and integrate world position.
 	float sn = std::sin(orientation);
 	float cs = std::cos(orientation);
 	
@@ -214,83 +299,32 @@ void Car::update_physics(float dt)
 	velocity.x = cs * velocity_local.x - sn * velocity_local.y;
 	velocity.y = sn * velocity_local.x + cs * velocity_local.y;
 	
-	// Integrate the position!
 	position += velocity * dt;
-	
-	// Update the statistics.
-	stats.append_update_line("position", "Position: (%.1f, %.1f)", position.x, position.y);
-	stats.append_update_line("velocity x", "Longitudal velocity: %.1f m/s", velocity_local.x);
-	stats.append_update_line("acceleration x", "Longitudal acceleration: %.1f m/s^2", acceleration_local.x);
-	stats.append_update_line("engine rpm", "Engine RPM: %.1f", engine_rpm);
+
+	// Statistics for debugging traction and braking //
+	stats.append_update_line("position", "Position (%.1f, %.1f)", position.x, position.y);
+	stats.append_update_line("speed", "Speed: %.1f km/h", glm::length(velocity_local) * 3.6);
+	stats.append_update_line("speedms", "Speed: %.1f m/s", glm::length(velocity_local));
+	stats.append_update_line("acceleration", "Acceleration Local %.1f m/s^2", glm::length(acceleration_local));
+	stats.append_update_line("blank1", "");
+	stats.append_update_line("rpm", "Engine RPM: %d rev/min", (int) engine_rpm);
+	stats.append_update_line("gear", "Current gear: %d", gear);
+	stats.append_update_line("automatic", "Automatic: %d", automatic);
+	stats.append_update_line("power", "Power/Max Power: %.1f / %.1f kW", engine_torque * engine_rpm * RPM_TO_ANGULAR_VELOCITY / 1000.0f, maximum_power / 1000.0f);
+	stats.append_update_line("poweromega", "Maximum power RPM: %d rev/min", (int) (maximum_power_omega * ANGULAR_VELOCITY_TO_RPM));
+	stats.append_update_line("blank2", "");
 	stats.append_update_line("engine torque", "Engine torque: %.1f Nm", engine_torque);
-	stats.append_update_line("slip ratio", "Slip ratio: %.1f", slip_ratio);
-	stats.append_update_line("traction force", "Traction force: %.1f N", traction_force);
-	stats.append_update_line("drag force x", "Longitudal drag force: %.1f N", drag_force.x);
 	stats.append_update_line("drive torque", "Drive torque: %.1f Nm", drive_torque);
-	stats.append_update_line("wheel torque", "Wheel torque: %.1f Nm", wheel_torque);
-
-	frame_count++;
-	stat_file << throttle << ";"
-		<< engine_rpm << ";"
-		<< engine_torque << ";"
-		<< drive_torque << ";"
-		<< drive_angular_acceleration << ";"
-		<< drive_angular_velocity << ";"
-		<< slip_ratio << ";"
-		<< traction_force << ";"
-		<< wheel_torque << ";"
-		<< wheel_angular_acceleration << ";"
-		<< wheel_angular_velocity << ";"
-		<< acceleration_local.x << ";" 
-		<< velocity_local.x << std::endl;
-	if (frame_count > 40)
-		throttle = false;
-
-	//stats.append_update_line("position", "Position: (%.1f, %.1f)", position.x, position.y);
-	//stats.append_update_line("speed", "Speed: %.1f m/s", glm::length(velocity));
-	//stats.append_update_line("engine rpm", "Engine RPM: %.1f", engine_rpm);
-	//stats.append_update_line("acceleration", "Acceleration: %.1f m/s^2", glm::length(acceleration));
-	//stats.append_update_line("front weight", "Front weight: %.1f kg", front_weight);
-	//stats.append_update_line("rear weight", "Rear weight: %.1f kg", rear_weight);
-	//stats.append_update_line("traction force", "Traction force: %.1f N", traction_force);
-	//stats.append_update_line("traction torque", "Traction torque: %.1f Nm", traction_torque);
-	//stats.append_update_line("drag force", "Drag force: %.1f N", glm::length(drag_force));
-	//stats.append_update_line("drag torque", "Drag torque: %.1f Nm", drag_torque);
-	//stats.append_update_line("engine torque", "Engine torque: %.1f Nm", engine_torque);
-	//stats.append_update_line("drive torque", "Drive torque: %.1f Nm", drive_torque);
-	//stats.append_update_line("drive angular acceleration", "Drive angular acceleration: %.1f rad/s^2", drive_angular_acceleration);
-	//stats.append_update_line("slip ratio", "Slip ratio: (%.1f - %.1f) / (%.1f + 1) = %.3f", wheel_angular_velocity * description.wheel_radius, velocity_local.x, velocity_local.x, slip_ratio);
-	//stats.append_update_line("wheel torque", "Wheel torque: %.1f Nm", wheel_torque);
-	//stats.append_update_line("wheel angular acceleration", "Wheel angular acceleration: %.1f rad/s^2", wheel_angular_acceleration);
-	//stats.append_update_line("wheel angular velocity", "Wheel angular velocity: %.1f rad/s", wheel_angular_velocity);
-	////stats.append_update_line("traction angular acceleration", "Traction angular acceleration: %f rad/s^2", traction_angular_acceleration);
-	//stats.append_update_line("throttle", "Throttle: %d", throttle);
-
-	//float weight = description.mass * G;
-	////float wheelbase = description.cg_to_front_axle + description.cg_to_back_axle;
-	////float front_weight = (description.cg_to_back_axle / wheelbase) * weight - (description.cg_height / wheelbase) * description.mass * acceleration_local.x;
-	////float rear_weight = (description.cg_to_front_axle / wheelbase) * weight + (description.cg_height / wheelbase) * description.mass * acceleration_local.x;
-	//float front_weight = weight * 0.5f;
-	//float rear_weight = weight * 0.5f;
-	//
-	//float transmission = description.gear_ratios[gear] * description.differential_ratio;
-	//float engine_rpm = ANGULAR_VELOCITY_TO_RPM * wheel_angular_velocity * transmission;
-	//float engine_torque = lerp_curve(description.torque_curve, engine_rpm);
-	//
-	//float drive_torque = engine_torque * transmission * description.transmission_efficiency;
-	//float drive_angular_acceleration = drive_torque / description.wheel_inertia;
-	//wheel_angular_velocity += drive_angular_acceleration * dt;
-	//
-	//float wheel_slip = (wheel_angular_velocity - velocity_local.x / description.wheel_radius) / glm::max(wheel_angular_velocity, velocity_local.x / description.wheel_radius);
-	//float adhesion = lerp_curve(description.slip_curve, wheel_slip);
-	//float traction_force = adhesion * rear_weight;
-	//float traction_torque = traction_force * description.wheel_radius;
-	//
-	//float wheel_angular_acceleration = -traction_torque / description.wheel_inertia;
-	//wheel_angular_velocity += wheel_angular_acceleration * dt;
-	//
-	//acceleration_local.x += traction_force / description.mass;
-	//velocity_local += acceleration_local * dt;
+	stats.append_update_line("traction force", "Traction force: %.1f N", traction_force);
+	stats.append_update_line("braking force", "Braking force: %.1f N", braking_force);
+	stats.append_update_line("cornering force front", "Cornering force front: %.1f N", cornering_force_front);
+	stats.append_update_line("cornering force rear", "Cornering force rear: %.1f N", cornering_force_rear);
+	stats.append_update_line("drag force", "Drag resistance: %.1f N", glm::length(drag_resistance));
+	stats.append_update_line("rolling friction", "Rolling resistance: %.1f N", glm::length(rolling_resistance));
+	stats.append_update_line("total traction front", "Total traction front: %.1f N", glm::length(front_total_traction));
+	stats.append_update_line("total traction rear", "Total traction rear: %.1f N", glm::length(rear_total_traction));
+	stats.append_update_line("front slipping", "Front slipping: %d", front_slipping);
+	stats.append_update_line("rear slipping", "Rear slipping: %d", rear_slipping);
 }
 
 void Car::render(float dt, float interpolation)
