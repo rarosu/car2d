@@ -1,7 +1,7 @@
-#version 330
+#version 140
 
-layout(location = 0) in vec2 in_position_s;
-layout(location = 1) in vec2 in_texcoord;
+in vec2 in_position_s;
+in vec2 in_texcoord;
 
 out vec2 vs_texcoord;
 

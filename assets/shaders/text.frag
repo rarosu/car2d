@@ -1,4 +1,4 @@
-#version 330
+#version 140
 
 in vec2 vs_texcoord;
 out vec4 out_color;

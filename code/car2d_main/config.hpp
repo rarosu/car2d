@@ -8,7 +8,7 @@ const float DEGREES_TO_RADIANS = 0.017453292519;
 
 const float DT = 1.0f / 200.0f;
 const int OPENGL_VERSION_MAJOR = 3;
-const int OPENGL_VERSION_MINOR = 3;
+const int OPENGL_VERSION_MINOR = 1;
 const std::string PROJECT_ROOT = "../../../";
 //const std::string PROJECT_ROOT = "./";
 const std::string DIRECTORY_ASSETS = PROJECT_ROOT + "assets/";

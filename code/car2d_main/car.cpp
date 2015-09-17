@@ -359,9 +359,7 @@ void Car::render(float dt, float interpolation)
 
 	uniform_instance_data.model_matrix = glm::mat3x4(translation * rotation * scale);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerInstance), &uniform_instance_data);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	
-
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);	
 
 	// Render the wheels.
 	glm::mat3 scale_wheel = glm::mat3(2.0f * description.wheel_radius, 0,						0,
@@ -371,9 +369,9 @@ void Car::render(float dt, float interpolation)
 							glm::vec2(description.cg_to_front_axle, -description.halfwidth), 
 							glm::vec2(-description.cg_to_back_axle, description.halfwidth),
 							glm::vec2(-description.cg_to_back_axle, -description.halfwidth) };
-
+	
 	float rotations[] = { steer_angle, steer_angle, 0, 0 };
-
+	
 	for (int i = 0; i < 4; ++i)
 	{
 		glm::mat3 translation_wheel = glm::mat3(1, 0, 0,
@@ -385,7 +383,7 @@ void Car::render(float dt, float interpolation)
 		glm::mat3 rotation_wheel = glm::mat3(cs_wheel,  sn_wheel, 0,
 											 -sn_wheel, cs_wheel, 0,
 											 0,			0,		  1);
-
+	
 		uniform_instance_data.model_matrix = glm::mat3x4(translation * rotation * translation_wheel * rotation_wheel * scale_wheel);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerInstance), &uniform_instance_data);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

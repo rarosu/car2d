@@ -1,6 +1,6 @@
-#version 330
+#version 140
 
-layout(location = 0) in vec2 in_position_m;
+in vec2 in_position_m;
 
 layout(std140) uniform PerFrame
 {

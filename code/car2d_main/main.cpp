@@ -87,7 +87,12 @@ WindowContext::WindowContext(const YAML::Node& config, int viewport_width, int v
 	}
 
 	// Setup an error callback function.
-	glDebugMessageCallback(output_debug_message, nullptr);
+	//if (GL_KHR_debug)
+	//{
+	//	glDebugMessageCallbackARB(output_debug_message, nullptr);
+	//	
+	//}
+	//glDebugMessageCallback(output_debug_message, nullptr);
 
 	// Setup the initial OpenGL context state.
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -127,7 +132,7 @@ Car2DMain::Car2DMain()
 	, stats(viewport_width, viewport_height)
 	, camera(Camera::create_projection(2.0f / zoom_level, viewport_width, viewport_height))
 	, car(YAML::LoadFile(DIRECTORY_CARS + config["Assets"]["DefaultCar"].as<std::string>()), config, stats)
-	, terrain(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
+	, terrain(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()), camera)
 	, road(YAML::LoadFile(DIRECTORY_MAPS + config["Assets"]["DefaultMap"].as<std::string>()))
 {
 	setup_resources();
@@ -287,10 +292,10 @@ void Car2DMain::render(float dt, float interpolation)
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
 
-	terrain.render();
-	road.render();
+	//terrain.render(camera);
+	//road.render();
 	car.render(dt, interpolation);
-	stats.render();
+	//stats.render();
 
 	SDL_GL_SwapWindow(window_context.window);
 }

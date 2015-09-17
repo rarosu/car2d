@@ -3,7 +3,7 @@
 #include "shader.hpp"
 #include <iostream>
 
-Terrain::Terrain(const YAML::Node& map_file)
+Terrain::Terrain(const YAML::Node& map_file, const Camera& camera)
 {
 	float scale = map_file["GroundTextureScale"].as<float>();
 	glm::mat3 model = glm::mat3(scale, 0,	   0,
@@ -14,6 +14,7 @@ Terrain::Terrain(const YAML::Node& map_file)
 						       -1, -1, 1);
 	uniform_instance_data.model_matrix = glm::mat3x4(model);
 	uniform_instance_data.bias_matrix = glm::mat3x4(bias);
+	uniform_instance_data.inverse_projection_view = glm::mat3x4(glm::inverse(camera.get_projection() * camera.get_view()));
 
 	glGenBuffers(1, &uniform_instance_buffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
@@ -78,12 +79,15 @@ Terrain::~Terrain()
 	glDeleteBuffers(1, &uniform_instance_buffer);
 }
 
-void Terrain::render()
+void Terrain::render(const Camera& camera)
 {
+	uniform_instance_data.inverse_projection_view = glm::mat3x4(glm::inverse(camera.get_projection() * camera.get_view()));
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	
 	glUseProgram(terrain_program);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TerrainPerInstance), &uniform_instance_data);
 
 	glActiveTexture(GL_TEXTURE0 + TEXTURE_DIFFUSE_BINDING);
 	glBindSampler(TEXTURE_DIFFUSE_BINDING, sampler);
