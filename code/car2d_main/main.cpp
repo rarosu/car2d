@@ -292,10 +292,10 @@ void Car2DMain::render(float dt, float interpolation)
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_FRAME_BINDING, uniform_frame_buffer);
 
-	//terrain.render(camera);
-	//road.render();
+	terrain.render(camera);
+	road.render();
 	car.render(dt, interpolation);
-	//stats.render();
+	stats.render();
 
 	SDL_GL_SwapWindow(window_context.window);
 }

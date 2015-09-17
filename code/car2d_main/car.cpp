@@ -359,7 +359,8 @@ void Car::render(float dt, float interpolation)
 
 	uniform_instance_data.model_matrix = glm::mat3x4(translation * rotation * scale);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerInstance), &uniform_instance_data);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);	
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glFinish(); // Required on Intel HD Graphics 3000...
 
 	// Render the wheels.
 	glm::mat3 scale_wheel = glm::mat3(2.0f * description.wheel_radius, 0,						0,
@@ -387,6 +388,7 @@ void Car::render(float dt, float interpolation)
 		uniform_instance_data.model_matrix = glm::mat3x4(translation * rotation * translation_wheel * rotation_wheel * scale_wheel);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerInstance), &uniform_instance_data);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glFinish(); // Required on Intel HD Graphics 3000...
 	}
 }
 
