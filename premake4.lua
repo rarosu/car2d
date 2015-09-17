@@ -1,7 +1,7 @@
 solution "car2d"
     configurations { "Debug", "Release" }
     platforms { "x32", "x64" }
-    location "build"
+    location "vs2013"
     
 	configuration { "x32", "Debug" }
 		targetdir "bin/x86/debug/"

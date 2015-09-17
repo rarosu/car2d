@@ -10,6 +10,7 @@ const float DT = 1.0f / 200.0f;
 const int OPENGL_VERSION_MAJOR = 4;
 const int OPENGL_VERSION_MINOR = 4;
 const std::string PROJECT_ROOT = "../../../";
+//const std::string PROJECT_ROOT = "./";
 const std::string DIRECTORY_ASSETS = PROJECT_ROOT + "assets/";
 const std::string DIRECTORY_CARS = DIRECTORY_ASSETS + "cars/";
 const std::string DIRECTORY_SHADERS = DIRECTORY_ASSETS + "shaders/";
