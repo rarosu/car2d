@@ -41,6 +41,9 @@ Road::Road(const YAML::Node& map_file)
 	glAttachShader(mesh_program, mesh_fs);
 	link_program(mesh_program);
 
+	glUniformBlockBinding(mesh_program, glGetUniformBlockIndex(mesh_program, "PerFrame"), UNIFORM_FRAME_BINDING);
+	glUniformBlockBinding(mesh_program, glGetUniformBlockIndex(mesh_program, "PerInstance"), UNIFORM_INSTANCE_BINDING);
+
 	// Setup the uniform buffer.
 	uniform_instance_data.model_matrix = glm::mat3x4(glm::mat3(1.0f));
 	

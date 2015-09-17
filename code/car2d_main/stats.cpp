@@ -41,6 +41,8 @@ Stats::Stats(int viewport_width, int viewport_height)
 	glAttachShader(text_program, text_fs);
 	link_program(text_program);
 
+	glUniformBlockBinding(text_program, glGetUniformBlockIndex(text_program, "PerInstance"), UNIFORM_INSTANCE_BINDING);
+
 	// Setup a scale matrix to go from screen space to normalized device space.
 	glm::mat3 scale(2.0f / viewport_width, 0.0f,				   0.0f,
 					0.0f,				   2.0f / viewport_height, 0.0f,

@@ -1,11 +1,11 @@
-#version 440
+#version 330
 
 in vec2 vs_texcoord;
 out vec4 out_color;
 
-layout(binding = 0) uniform sampler2D sampler_atlas;
+uniform sampler2D sampler_atlas;
 
-layout(binding = 2, std140) uniform PerInstance
+layout(std140) uniform PerInstance
 {
 	mat3 model_matrix;
 	vec4 color;

@@ -1,17 +1,17 @@
-#version 440
+#version 330
 
 layout(location = 0) in vec2 in_position_m;
 layout(location = 1) in vec2 in_texcoord;
 
 out vec2 vs_texcoord;
 
-layout(binding = 1, std140) uniform PerFrame
+layout(std140) uniform PerFrame
 {
 	mat3 view_matrix;
 	mat3 projection_matrix;
 };
 
-layout(binding = 2, std140) uniform PerInstance
+layout(std140) uniform PerInstance
 {
 	mat3 model_matrix;
 	mat3 bias_matrix;

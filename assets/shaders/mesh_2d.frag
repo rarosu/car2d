@@ -1,9 +1,9 @@
-#version 440
+#version 330
 
 in vec2 vs_texcoord;
 out vec4 out_color;
 
-layout(binding = 0) uniform sampler2D sampler_color;
+uniform sampler2D sampler_color;
 
 void main()
 {

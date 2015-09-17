@@ -1,6 +1,7 @@
 #include "terrain.hpp"
 #include <gli/gli.hpp>
 #include "shader.hpp"
+#include <iostream>
 
 Terrain::Terrain(const YAML::Node& map_file)
 {
@@ -54,6 +55,9 @@ Terrain::Terrain(const YAML::Node& map_file)
 	glAttachShader(terrain_program, terrain_vs);
 	glAttachShader(terrain_program, terrain_fs);
 	link_program(terrain_program);
+
+	glUniformBlockBinding(terrain_program, glGetUniformBlockIndex(terrain_program, "PerFrame"), UNIFORM_FRAME_BINDING);
+	glUniformBlockBinding(terrain_program, glGetUniformBlockIndex(terrain_program, "PerInstance"), UNIFORM_INSTANCE_BINDING);
 }
 
 Terrain::~Terrain()
@@ -80,7 +84,7 @@ void Terrain::render()
 	
 	glUseProgram(terrain_program);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
-	
+
 	glActiveTexture(GL_TEXTURE0 + TEXTURE_DIFFUSE_BINDING);
 	glBindSampler(TEXTURE_DIFFUSE_BINDING, sampler);
 	glBindTexture(GL_TEXTURE_2D, texture);

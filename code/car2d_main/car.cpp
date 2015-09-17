@@ -101,6 +101,9 @@ Car::Car(const YAML::Node& car_config, const YAML::Node& config, Stats& stats)
 	glAttachShader(mesh_program, mesh_fs);
 	link_program(mesh_program);
 
+	glUniformBlockBinding(mesh_program, glGetUniformBlockIndex(mesh_program, "PerFrame"), UNIFORM_FRAME_BINDING);
+	glUniformBlockBinding(mesh_program, glGetUniformBlockIndex(mesh_program, "PerInstance"), UNIFORM_INSTANCE_BINDING);
+
 	uniform_instance_data.model_matrix = glm::mat3x4(glm::mat3(1));
 	glGenBuffers(1, &uniform_instance_buffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, UNIFORM_INSTANCE_BINDING, uniform_instance_buffer);
